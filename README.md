@@ -1,5 +1,7 @@
 # baleen
 
+Data validation in Erlang
+
 ## The name
 
     Baleen is a filter-feeder system inside the mouths of baleen
