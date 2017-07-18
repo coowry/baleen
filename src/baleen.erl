@@ -217,7 +217,13 @@ member(L) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec literal(A) -> validator(A,A).
-literal(X) -> invalid().
+literal(X) ->
+  fun (T) ->
+      case T =:= X of
+        true -> {ok, T};
+        false -> {error, format("\"~w\" does not match \"~w\"",[T, X])}
+       end
+  end.
 
 literal_test_() ->
   Values = ["Hello", <<"By">>, 42],
