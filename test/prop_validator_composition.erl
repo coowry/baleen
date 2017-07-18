@@ -15,7 +15,7 @@ prop_chain_integer_even() ->
             {ok, Integer} ->
               0 == Integer rem 2;
             {error, _} ->
-              1 == Integer rem 2
+              0 /= Integer rem 2
           end).
 
 is_even(X) when is_integer(X) -> X rem 2 == 0.
