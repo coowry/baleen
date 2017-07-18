@@ -6,7 +6,7 @@
 %%
 %% Validators of type {@type validator(A,B)} are functions that accept
 %% terms of type {@type A} and returns a validation result of type
-%% {@type validator_result(B)}.
+%% {@type result(B)}.
 %%
 %% @TODO complete the documentation
 -module(baleen).
@@ -23,9 +23,9 @@
 %% Types
 %%====================================================================
 
--type validator_result(R) :: {ok, R} | {error, binary()}.
+-type result(R) :: {ok, R} | {error, binary()}.
 
--type validator(A,B) :: fun((A) -> validator_result(B)).
+-type validator(A,B) :: fun((A) -> result(B)).
 
 -type predicate(A) :: fun((A) -> boolean()).
 
@@ -33,7 +33,7 @@
 %% API functions
 %%====================================================================
 
--spec validate(validator(A,B), A) -> validator_result(B).
+-spec validate(validator(A,B), A) -> result(B).
 %% @doc Validates data with a validator. `X' is the term to be
 %% validated with validator `V'.
 validate(V, X) -> V(X).
