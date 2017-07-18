@@ -161,8 +161,14 @@ all([V|Vs]) ->
     end.
 
 all_test_() ->
-  Values = ["Hello", "By", "42"],
+  Values = ["Hello", <<"By">>, 42],
   [?_assertMatch({ok, Value}, validate(all([valid(), valid()]), Value))
+   || Value <- Values]
+  ++
+  [?_assertEqual({error, format("Invalid term \"~w\"",[Value])}, validate(all([valid(), invalid()]), Value))
+   || Value <- Values]
+  ++
+  [?_assertEqual({error, format("Invalid term \"~w\"",[Value])}, validate(all([invalid(), valid(), invalid()]), Value))
    || Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -181,8 +187,14 @@ any([V|Vs]) ->
     end.
     
 any_test_() ->
-  Values = ["Hello", "By", "42"],
+  Values = ["Hello", <<"By">>, 42],
   [?_assertMatch({ok, Value}, validate(any([valid(), valid()]), Value))
+   || Value <- Values]
+  ++
+  [?_assertMatch({ok, Value}, validate(any([valid(), invalid()]), Value))
+   || Value <- Values]
+  ++
+  [?_assertMatch({error, <<"There isn't any valid">>}, validate(any([invalid(), valid(), invalid()]), Value))
    || Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
