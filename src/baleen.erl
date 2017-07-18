@@ -55,7 +55,7 @@ integer_from_string() ->
   end.
 
 -spec chain(nonempty_list(validator(A,A))) -> validator(A,A).
-chain(_Validators) -> valid().
+chain(Validators) -> lists:foldr(fun compose/2, valid(), Validators).
 
 -spec compose(validator(A,B), validator(B,C)) -> validator(A,C).
 compose(V1, V2) ->
