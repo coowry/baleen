@@ -1,7 +1,7 @@
 -module(prop_complex_validation).
 -include_lib("proper/include/proper.hrl").
 
--import(baleen, [validate/2, member/1, is_ok/1, invalid/0]).
+-import(baleen, [validate/2, member/1, is_ok/1, is_error/1, invalid/0]).
 
 %%%%%%%%%%%%%%%%%%
 %%% Properties %%%
@@ -12,4 +12,9 @@ prop_member() ->
 
 prop_empty_member() ->
   ?FORALL(T, term(),
-          validate(member([]),T) == validate(invalid(),T)).
+          case validate(member([]),T) of
+            {ok, T} -> {ok, T} == validate(invalid(),T);
+            {error, _} -> is_error(validate(invalid(),T))
+          end).
+
+

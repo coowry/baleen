@@ -113,7 +113,15 @@ compose(V1, V2) ->
 all(_Validators) -> valid().
 
 -spec member(list(A)) -> validator(A,A).
-member(_L) -> invalid().
+member(L) ->
+  fun(T) ->
+       case lists:member(T, L) of
+         true ->
+           {ok, T};
+         false ->
+           {error, format("\"~w\" is not member of \"~w\"",[T, L])}
+       end
+  end.
 
 %%====================================================================
 %% Internal functions
