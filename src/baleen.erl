@@ -156,6 +156,29 @@ member(L) ->
        end
   end.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec regexp(iodata()) -> validator(String, String)
+                          when String :: iodata() | unicode:charlist().
+regexp(Regexp) ->
+  {ok, RE} = re:compile(Regexp),
+  fun (String) ->
+      case re:run(String, RE) of
+        nomatch -> {error, format("\"~s\" does not match regexp \"~w\"", [String, Regexp])};
+        _ -> {ok, String}
+      end
+  end.
+
+regexp_test_() ->
+  Email_Regexp = "^([0-9a-zA-Z]([-\\.\\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\\w]*[0-9a-zA-Z]\\.)+[a-zA-Z]{2,9})$",
+  Emails = ["aherranz@gmail.com", <<"angel.herranz@coowry.com">>],
+  No_Emails = ["1", "aherranz", <<"angel.herranz.coowry.com">>],
+  Email_Validator = regexp(Email_Regexp),
+  [?_assertEqual({ok, Email}, validate(Email_Validator, Email))
+   || Email <- Emails ]
+  ++
+  [?_assertMatch({error, _}, validate(Email_Validator, No_Email))
+   || No_Email <- No_Emails ].
+
 %%====================================================================
 %% Internal functions
 %%====================================================================
