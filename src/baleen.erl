@@ -20,7 +20,8 @@
 -export([predicate/1]).
 -export([invalid/0, valid/0]).
 -export([integer_from_string/0]).
--export([compose/2, compose/1, all/1, member/1]).
+-export([compose/2, compose/1, all/1, any/1, member/1]).
+
 
 %%====================================================================
 %% Types
@@ -142,8 +143,38 @@ compose(Validators) -> lists:foldr(fun compose/2, valid(), Validators).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec all(list(validator(A,B))) -> validator(A,B).
-all(_Validators) -> valid().
+all([]) -> valid();
+all([V|Vs]) -> 
+    fun(T) ->
+	    case V(T) of
+		{ok, X1} ->
+		    case all(Vs) of
+			{ok, X2} -> 
+			    case X1 =:= X2 of
+				true -> {ok, X1};
+				false -> {error, format("\"~w\" and \"~w\" are not equal",[X1,X2])}
+			    end;
+			{error, Error} -> {error, Error}
+		    end;
+		{error, Error} -> {error, Error}
+	    end
+    end.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec any(list(validator(A,B))) -> validator(A,B).
+any([]) -> invalid();
+any([V|Vs]) -> 
+    fun(T) ->
+	    case V(T) of
+		{ok,X} -> {ok, X};
+		{error, _Error} ->
+		    case any(Vs) of
+			{ok, X} -> {ok, X};
+			{error, _Error} -> {error, format("There isn't any valid",[])}
+		    end
+	    end
+    end.
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec member(list(A)) -> validator(A,A).
 member(L) ->
@@ -155,6 +186,8 @@ member(L) ->
            {error, format("\"~w\" is not member of \"~w\"",[T, L])}
        end
   end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%====================================================================
 %% Internal functions
