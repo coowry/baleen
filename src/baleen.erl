@@ -23,7 +23,7 @@
 %% Types
 %%====================================================================
 
--type validator_result(R) :: {ok, R} | {error, binary()} | boolean().
+-type validator_result(R) :: {ok, R} | {error, binary()}.
 
 -type validator(A,B) :: fun((A) -> validator_result(B)).
 
