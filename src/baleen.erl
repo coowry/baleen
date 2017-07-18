@@ -11,6 +11,9 @@
 %% @TODO complete the documentation
 -module(baleen).
 
+%% AH: we have some unit tests embedded in the implementation.
+-include_lib("eunit/include/eunit.hrl").
+
 %% API exports
 -export([ok_result/1, error_result/1, is_ok/1, is_error/1]).
 -export([validate/2]).
@@ -33,34 +36,40 @@
 %% API functions
 %%====================================================================
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec is_ok(result(A)) -> boolean() when A :: term().
 is_ok({ok, _}) -> true;
 is_ok({error, Message}) when is_binary(Message) -> false;
 is_ok(_) -> throw(badarg).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec is_error(result(A)) -> boolean() when A :: term().
 is_error({error, Message}) when is_binary(Message) -> true;
 is_error({error, _}) -> throw(badarg);
 is_error({ok, _}) -> false;
 is_error(_) -> throw(badarg).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec ok_result(result(A)) -> A.
 %% @doc Returns `X' from `{ok, X}'.
 %% @throws badarg of parameter is not a tuple `{ok, _}'.
 ok_result({ok, X}) -> X;
 ok_result(_) -> throw(badarg).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec error_result(result(A)) -> binary() when A :: term().
 %% @doc Returns `Message' in `{error, Message}'.
 %% @throws badarg of parameter is not a tuple `{error, _}'.
 error_result({error, Message}) -> Message;
 error_result(_) -> throw(badarg).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec validate(validator(A,B), A) -> result(B).
 %% @doc Validates data with a validator. `X' is the term to be
 %% validated with validator `V'.
 validate(V, X) -> V(X).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec predicate(predicate(A)) -> validator(A,A) when A :: term().
 %% @doc Returns a validator given a predicate. When validating `X'
 %% with a predicate `P', if `P(X)' holds then `{ok, X}' is
@@ -76,15 +85,30 @@ predicate(P) ->
       end
   end.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec invalid() -> validator(_,_).
 invalid() -> fun(X) ->
                  {error, format("Invalid term \"~w\"", [X])}
              end.
 
+invalid_test_() ->
+  Values = [true, null, undefined, "Hola", <<"">>, <<"Hola">>, 1, 0 , -1],
+  [ ?_assertMatch({error, <<"Invalid term",_/binary>>},
+                  validate(invalid(), Value))
+    || Value <- Values ].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec valid() -> validator(_,_).
 valid() ->
     fun(X) -> {ok, X} end.
 
+valid_test_() ->
+  Values = [true, null, undefined, "Hola", <<"">>, <<"Hola">>, 1, 0 , -1],
+  [ ?_assertMatch({ok, Value},
+                  validate(valid(), Value))
+    || Value <- Values ].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec integer_from_string() -> validator(string(), integer()).
 integer_from_string() ->
   fun(Value) ->
@@ -94,6 +118,7 @@ integer_from_string() ->
       end
   end.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec compose(validator(A,B), validator(B,C)) -> validator(A,C).
 compose(V1, V2) ->
   fun (X1) ->
@@ -105,12 +130,15 @@ compose(V1, V2) ->
       end
   end.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec compose(nonempty_list(validator(A,A))) -> validator(A,A).
 compose(Validators) -> lists:foldr(fun compose/2, valid(), Validators).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec all(list(validator(A,B))) -> validator(A,B).
 all(_Validators) -> valid().
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec member(list(A)) -> validator(A,A).
 member(L) ->
   fun(T) ->
