@@ -29,7 +29,13 @@ valid() ->
     fun(X) -> {ok, X} end.
 
 -spec integer_from_string() -> validator(string(), integer()).
-integer_from_string() -> invalid().
+integer_from_string() ->
+  fun(Value) ->
+      case io_lib:fread("~d",Value) of
+        {ok, [Integer], []} -> {ok, Integer};
+        _ -> {error, format("\"~w\" is not an integer", [Value])}
+      end
+  end.
 
 -spec chain(nonempty_list(validator(A,A))) -> validator(A,A).
 chain(_Validators) -> valid().
