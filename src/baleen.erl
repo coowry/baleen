@@ -129,9 +129,9 @@ integer_from_string() ->
 -spec compose(validator(A,B), validator(B,C)) -> validator(A,C).
 compose(V1, V2) ->
   fun (X1) ->
-      case V1(X1) of
+      case validate(V1,X1) of
         {ok, X2} ->
-          V2(X2);
+          validate(V2,X2);
         Error ->
           Error
       end
@@ -146,7 +146,7 @@ compose(Validators) -> lists:foldr(fun compose/2, valid(), Validators).
 all([]) -> valid();
 all([V|Vs]) -> 
     fun(T) ->
-	    case V(T) of
+	    case validate(V,T) of
 		{ok, X1} ->
 		    case all(Vs) of
 			{ok, X2} -> 
@@ -165,7 +165,7 @@ all([V|Vs]) ->
 any([]) -> invalid();
 any([V|Vs]) -> 
     fun(T) ->
-	    case V(T) of
+	    case validate(V,T) of
 		{ok,X} -> {ok, X};
 		{error, _Error} ->
 		    case any(Vs) of
