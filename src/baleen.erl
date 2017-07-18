@@ -19,9 +19,7 @@ validate(Validator, Data) -> Validator(Data).
 
 -spec invalid() -> validator(_,_).
 invalid() -> fun(X) ->
-                 Error_Chars = io_lib:format("Invalid term \"~w\"", [X]),
-                 Error = unicode:characters_to_binary(Error_Chars),
-                 {error, Error}
+                 {error, format("Invalid term \"~w\"", [X])}
              end.
 
 -spec valid() -> validator(_,_).
@@ -37,3 +35,7 @@ all(_Validators) -> valid().
 %%====================================================================
 %% Internal functions
 %%====================================================================
+-spec format(io:format(), [term()]) -> binary().
+format(Format, Terms) ->
+  Message = io_lib:format(Format, Terms),
+  unicode:characters_to_binary(Message).
