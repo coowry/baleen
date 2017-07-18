@@ -9,6 +9,8 @@
 
 -export([integer_from_string/0]).
 
+-export([compose/2]).
+
 -export([chain/1, all/1]).
 
 -type validator_result(R) :: {ok, R} | {error, binary()} | boolean().
@@ -54,6 +56,17 @@ integer_from_string() ->
 
 -spec chain(nonempty_list(validator(A,A))) -> validator(A,A).
 chain(_Validators) -> valid().
+
+-spec compose(validator(A,B), validator(B,C)) -> validator(A,C).
+compose(V1, V2) ->
+  fun (X1) ->
+      case V1(X1) of
+        {ok, X2} ->
+          V2(X2);
+        Error ->
+          Error
+      end
+  end.
 
 -spec all(list(validator(A,B))) -> validator(A,B).
 all(_Validators) -> valid().
