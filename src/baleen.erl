@@ -18,8 +18,11 @@
 validate(Validator, Data) -> Validator(Data).
 
 -spec fail() -> validator(_,_).
-fail() ->
-    fun(_) -> {error,<<"Fail validator">>} end.
+fail() -> fun(X) ->
+              Error_Chars = io_lib:format("Fail to validate term \"~w\"", [X]),
+              Error = unicode:characters_to_binary(Error_Chars),
+              {error, Error}
+          end.
 
 -spec success() -> validator(_,_).
 success() ->
