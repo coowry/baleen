@@ -12,12 +12,13 @@
 -module(baleen).
 
 %% API exports
+-export([ok_result/1, error_result/1, is_ok/1, is_error/1]).
 -export([validate/2]).
 -export([predicate/1]).
 -export([invalid/0, valid/0]).
 -export([integer_from_string/0]).
 -export([compose/2]).
--export([chain/1, all/1]).
+-export([chain/1, all/1, member/1]).
 
 %%====================================================================
 %% Types
@@ -32,6 +33,29 @@
 %%====================================================================
 %% API functions
 %%====================================================================
+
+-spec is_ok(result(A)) -> boolean() when A :: term().
+is_ok({ok, _}) -> true;
+is_ok({error, Message}) when is_binary(Message) -> false;
+is_ok(_) -> throw(badarg).
+
+-spec is_error(result(A)) -> boolean() when A :: term().
+is_error({error, Message}) when is_binary(Message) -> true;
+is_error({error, _}) -> throw(badarg);
+is_error({ok, _}) -> false;
+is_error(_) -> throw(badarg).
+
+-spec ok_result(result(A)) -> A.
+%% @doc Returns `X' from `{ok, X}'.
+%% @throws badarg of parameter is not a tuple `{ok, _}'.
+ok_result({ok, X}) -> X;
+ok_result(_) -> throw(badarg).
+
+-spec error_result(result(A)) -> binary() when A :: term().
+%% @doc Returns `Message' in `{error, Message}'.
+%% @throws badarg of parameter is not a tuple `{error, _}'.
+error_result({error, Message}) -> Message;
+error_result(_) -> throw(badarg).
 
 -spec validate(validator(A,B), A) -> result(B).
 %% @doc Validates data with a validator. `X' is the term to be
@@ -87,6 +111,9 @@ compose(V1, V2) ->
 
 -spec all(list(validator(A,B))) -> validator(A,B).
 all(_Validators) -> valid().
+
+-spec member(list(A)) -> validator(A,A).
+member(_L) -> invalid().
 
 %%====================================================================
 %% Internal functions
