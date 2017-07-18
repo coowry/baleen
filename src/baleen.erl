@@ -180,6 +180,11 @@ any([V|Vs]) ->
 	    end
     end.
     
+any_test_() ->
+  Values = ["Hello", "By", "42"],
+  [?_assertMatch({ok, Value}, validate(any([valid(), valid()]), Value))
+   || Value <- Values].
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec member(list(A)) -> validator(A,A).
 member(L) ->
