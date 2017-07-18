@@ -1,16 +1,16 @@
 -module(prop_validator_composition).
 -include_lib("proper/include/proper.hrl").
 
--import(baleen, [validate/2, predicate/1, chain/1, integer_from_string/0]).
+-import(baleen, [validate/2, predicate/1, compose/1, integer_from_string/0]).
 
 %%%%%%%%%%%%%%%%%%
 %%% Properties %%%
 %%%%%%%%%%%%%%%%%%
-prop_chain_integer_even() ->
+prop_compose_integer_even() ->
   ?FORALL(Integer, integer(),
           case validate(
-                 chain([integer_from_string(),
-                        predicate(fun is_even/1)]),
+                 compose([integer_from_string(),
+                          predicate(fun is_even/1)]),
                  integer_to_list(Integer)) of
             {ok, Integer} ->
               0 == Integer rem 2;

@@ -17,8 +17,7 @@
 -export([predicate/1]).
 -export([invalid/0, valid/0]).
 -export([integer_from_string/0]).
--export([compose/2]).
--export([chain/1, all/1, member/1]).
+-export([compose/2, compose/1, all/1, member/1]).
 
 %%====================================================================
 %% Types
@@ -95,9 +94,6 @@ integer_from_string() ->
       end
   end.
 
--spec chain(nonempty_list(validator(A,A))) -> validator(A,A).
-chain(Validators) -> lists:foldr(fun compose/2, valid(), Validators).
-
 -spec compose(validator(A,B), validator(B,C)) -> validator(A,C).
 compose(V1, V2) ->
   fun (X1) ->
@@ -108,6 +104,9 @@ compose(V1, V2) ->
           Error
       end
   end.
+
+-spec compose(nonempty_list(validator(A,A))) -> validator(A,A).
+compose(Validators) -> lists:foldr(fun compose/2, valid(), Validators).
 
 -spec all(list(validator(A,B))) -> validator(A,B).
 all(_Validators) -> valid().
