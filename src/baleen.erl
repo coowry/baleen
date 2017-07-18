@@ -3,6 +3,8 @@
 %% API exports
 -export([validate/2]).
 
+-export([predicate/1]).
+
 -export([invalid/0, valid/0]).
 
 -export([integer_from_string/0]).
@@ -13,11 +15,24 @@
 
 -type validator(A,B) :: fun((A) -> validator_result(B)).
 
+-type predicate(A) :: fun((A) -> boolean()).
+
 %%====================================================================
 %% API functions
 %%====================================================================
 -spec validate(validator(A,B), A) -> validator_result(B).
 validate(Validator, Data) -> Validator(Data).
+
+-spec predicate(predicate(A)) -> validator(A,A).
+predicate(P) ->
+  fun(X) ->
+      case P(X) of
+        true ->
+          {ok, X};
+        false ->
+          {error, format("Improper term \"~w\"", [X])}
+      end
+  end.
 
 -spec invalid() -> validator(_,_).
 invalid() -> fun(X) ->
