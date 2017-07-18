@@ -20,7 +20,7 @@
 -export([predicate/1]).
 -export([invalid/0, valid/0]).
 -export([integer_from_string/0]).
--export([compose/2, compose/1, all/1, any/1, member/1]).
+-export([compose/2, compose/1, all/1, any/1, member/1, literal/1]).
 
 
 %%====================================================================
@@ -216,6 +216,18 @@ member(L) ->
   end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec literal(A) -> validator(A,A).
+literal(X) -> invalid().
+
+literal_test_() ->
+  Values = ["Hello", <<"By">>, 42],
+  [if Literal =:= Value ->
+       ?_assertEqual({ok, Value}, validate(literal(Literal), Value));
+      true ->
+       ?_assertMatch({error, _}, validate(literal(Literal), Value))
+   end
+   || Literal <- Values, Value <- Values ].
+
 
 %%====================================================================
 %% Internal functions
