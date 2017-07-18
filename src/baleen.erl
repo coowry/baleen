@@ -3,7 +3,7 @@
 %% API exports
 -export([validate/2]).
 
--export([fail/0, success/0]).
+-export([invalid/0, valid/0]).
 
 -export([chain/1, all/1]).
 
@@ -17,22 +17,22 @@
 -spec validate(validator(A,B), A) -> validator_result(B).
 validate(Validator, Data) -> Validator(Data).
 
--spec fail() -> validator(_,_).
-fail() -> fun(X) ->
-              Error_Chars = io_lib:format("Fail to validate term \"~w\"", [X]),
-              Error = unicode:characters_to_binary(Error_Chars),
-              {error, Error}
-          end.
+-spec invalid() -> validator(_,_).
+invalid() -> fun(X) ->
+                 Error_Chars = io_lib:format("Invalid term \"~w\"", [X]),
+                 Error = unicode:characters_to_binary(Error_Chars),
+                 {error, Error}
+             end.
 
--spec success() -> validator(_,_).
-success() ->
+-spec valid() -> validator(_,_).
+valid() ->
     fun(X) -> {ok, X} end.
 
 -spec chain(nonempty_list(validator(A,A))) -> validator(A,A).
-chain(_Validators) -> success().
+chain(_Validators) -> valid().
 
 -spec all(list(validator(A,B))) -> validator(A,B).
-all(_Validators) -> success().
+all(_Validators) -> valid().
 
 %%====================================================================
 %% Internal functions
