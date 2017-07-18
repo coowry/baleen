@@ -91,6 +91,12 @@ invalid() -> fun(X) ->
                  {error, format("Invalid term \"~w\"", [X])}
              end.
 
+invalid_simple_test_() ->
+  [ ?_assertMatch({error, <<"Invalid term",_/binary>>},
+                  validate(invalid(), "Hola"))
+  , ?_assertNotMatch({ok, _},
+                     validate(invalid(), 42)) ].
+
 invalid_test_() ->
   Values = [true, null, undefined, "Hola", <<"">>, <<"Hola">>, 1, 0 , -1],
   [ ?_assertMatch({error, <<"Invalid term",_/binary>>},
