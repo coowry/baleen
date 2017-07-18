@@ -1,17 +1,27 @@
+%% @author Ángel Herranz, Manuel Cherep, Miguel Emilio Ruiz
+%%
+%% @copyright 2017 Coowry Ltd.
+%%
+%% @doc Data validation in Erlang.
+%%
+%% Validators of type {@type validator(A,B)} are functions that accept
+%% terms of type {@type A} and returns a validation result of type
+%% {@type validator_result(B)}.
+%%
+%% @TODO complete the documentation
 -module(baleen).
 
 %% API exports
 -export([validate/2]).
-
 -export([predicate/1]).
-
 -export([invalid/0, valid/0]).
-
 -export([integer_from_string/0]).
-
 -export([compose/2]).
-
 -export([chain/1, all/1]).
+
+%%====================================================================
+%% Types
+%%====================================================================
 
 -type validator_result(R) :: {ok, R} | {error, binary()} | boolean().
 
@@ -22,10 +32,17 @@
 %%====================================================================
 %% API functions
 %%====================================================================
--spec validate(validator(A,B), A) -> validator_result(B).
-validate(Validator, Data) -> Validator(Data).
 
--spec predicate(predicate(A)) -> validator(A,A).
+-spec validate(validator(A,B), A) -> validator_result(B).
+%% @doc Validates data with a validator. `X' is the term to be
+%% validated with validator `V'.
+validate(V, X) -> V(X).
+
+-spec predicate(predicate(A)) -> validator(A,A) when A :: term().
+%% @doc Returns a validator given a predicate. When validating `X'
+%% with a predicate `P', if `P(X)' holds then `{ok, X}' is
+%% returned. Otherwise, `{error, <<"Improper term  \"X\"">>}' is
+%% returned.
 predicate(P) ->
   fun(X) ->
       case P(X) of
