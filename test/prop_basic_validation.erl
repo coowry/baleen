@@ -18,3 +18,8 @@ prop_invalid() ->
             {error, _} -> true;
             {ok,_} -> false
           end).
+
+prop_is_integer_with_integers() ->
+  ?FORALL(Integer, integer(),
+          {ok, Integer} == baleen:validate(baleen:integer_from_string(),
+                                           integer_to_list(Integer))).

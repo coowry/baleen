@@ -5,6 +5,8 @@
 
 -export([invalid/0, valid/0]).
 
+-export([integer_from_string/0]).
+
 -export([chain/1, all/1]).
 
 -type validator_result(R) :: {ok, R} | {error, binary()} | boolean().
@@ -25,6 +27,9 @@ invalid() -> fun(X) ->
 -spec valid() -> validator(_,_).
 valid() ->
     fun(X) -> {ok, X} end.
+
+-spec integer_from_string() -> validator(string(), integer()).
+integer_from_string() -> invalid().
 
 -spec chain(nonempty_list(validator(A,A))) -> validator(A,A).
 chain(_Validators) -> valid().
