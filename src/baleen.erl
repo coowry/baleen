@@ -20,7 +20,7 @@
 -export([predicate/1]).
 -export([invalid/0, valid/0]).
 -export([integer_from_string/0]).
--export([compose/2, compose/1, all/1, any/1, member/1]).
+-export([compose/2, compose/1, all/1, any/1, member/1, literal/1]).
 
 
 %%====================================================================
@@ -67,7 +67,7 @@ error_result(_) -> throw(badarg).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec validate(validator(A,B), A) -> result(B).
 %% @doc Validates data with a validator. `X' is the term to be
-%% validated with validator `V'.
+%% validated with validator `V'.n
 validate(V, X) -> V(X).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -224,7 +224,21 @@ member(L) ->
   end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec literal(A) -> validator(A,A).
+literal(_Term) -> invalid().
 
+literal_test_() ->
+    Values = [undefined, 1, <<"Hello">>, true, 0, -1],
+    [?_assertMatch({ok, Value},
+		  validate(literal(Value),Value))
+    || Value <- Values]
+	++
+	[?_assertMatch({error, _},
+		  validate(literal(false),Value))
+    || Value <- Values]
+.
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
 %% Internal functions
 %%====================================================================
