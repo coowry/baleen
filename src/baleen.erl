@@ -260,11 +260,14 @@ literal_2_test_() ->
     || Literal <- Values, Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec regular_expression(RegularExpression) -> validator(String, String).
-regular_expression(RE) -> invalid().
+-spec regular_expression(String) -> validator(String, String).
+regular_expression(_RegularExpression) -> invalid().
 
-regular_expression_test() ->
-    
+regular_expression_test_() ->
+    Values = ["The quick brown fox.", "There's a bluebird in my heart"],
+    [?_assertMatch({ok, Value},
+		  validate(regular_expression(Value),Value))
+    || Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
