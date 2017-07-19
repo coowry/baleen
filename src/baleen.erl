@@ -225,19 +225,47 @@ member(L) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec literal(A) -> validator(A,A).
-literal(_Term) -> invalid().
+literal(Term) ->
+    fun(T) ->
+	    case Term =:= T of
+		true -> {ok,Term};
+		false -> {error, format("\"~w\" and \"~w\" not match", [Term, T])}
+	    end
+    end.
 
 literal_test_() ->
     Values = [undefined, 1, <<"Hello">>, true, 0, -1],
     [?_assertMatch({ok, Value},
-		  validate(literal(Value),Value))
-    || Value <- Values]
+		   validate(literal(Value),Value))
+     || Value <- Values]
 	++
 	[?_assertMatch({error, _},
-		  validate(literal(false),Value))
-    || Value <- Values]
-.
+		       validate(literal(false),Value))
+	 || Value <- Values].
+
+literal_1_test_() ->
+    Terms = [4, undefined, <<"Bye">>, "foo"],
+    Values = [3, defined, <<"Hello">>, "bar"],
+    [?_assertEqual({error, format("\"~w\" and \"~w\" not match",[Term,Value])},
+		 validate(literal(Term),Value))
+    || Term <- Terms, Value <- Values].
+
+literal_2_test_() ->
+    Values = ["Hello", <<"By">>, 42],
+    [if Literal =:= Value ->
+	     ?_assertEqual({ok, Value}, validate(literal(Literal), Value));
+	true ->
+	     ?_assertMatch({error, _}, validate(literal(Literal), Value))
+     end
+    || Literal <- Values, Value <- Values].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec regular_expression(RegularExpression) -> validator(String, String).
+regular_expression(RE) -> invalid().
+
+regular_expression_test() ->
     
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
 %% Internal functions
