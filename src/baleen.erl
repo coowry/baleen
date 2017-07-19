@@ -148,7 +148,7 @@ all([V|Vs]) ->
     fun(T) ->
 	    case validate(V,T) of
 		{ok, X1} ->
-		    case all(Vs) of
+		    case validate(all(Vs),T) of
 			{ok, X2} -> 
 			    case X1 =:= X2 of
 				true -> {ok, X1};
@@ -180,15 +180,19 @@ any([]) -> invalid();
 any([V|Vs]) -> 
     fun(T) ->
 	    case validate(V,T) of
-		{ok,X} -> {ok, X};
-		{error, _Error} ->
-		    case any(Vs) of
-			{ok, X} -> {ok, X};
-			{error, _Error} -> {error, format("There isn't any valid",[])}
+		{ok,X1} -> 
+		    %% ?debugMsg("El primero es correcto"),
+		    {ok, X1};
+		{error, _Error1} ->
+		    case validate(any(Vs),T) of
+			{ok, X2} ->
+			    {ok, X2};
+			{error, _Error2} -> 
+			    {error, format("There isn't any valid",[])}
 		    end
 	    end
     end.
-    
+
 any_test_() ->
   Values = ["Hello", <<"By">>, 42],
   [?_assertMatch({ok, Value},
@@ -199,8 +203,12 @@ any_test_() ->
                  validate(any([valid(), invalid()]), Value))
    || Value <- Values]
   ++
+  [?_assertNotMatch({error, <<"There isn't any valid">>},
+                    validate(any([invalid(), valid(), invalid()]), Value))
+   || Value <- Values]
+  ++
   [?_assertMatch({error, <<"There isn't any valid">>},
-                 validate(any([invalid(), valid(), invalid()]), Value))
+                 validate(any([invalid(), invalid(), invalid()]), Value))
    || Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
