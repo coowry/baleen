@@ -21,7 +21,7 @@
 -export([invalid/0, valid/0]).
 -export([integer_from_string/0]).
 -export([compose/2, compose/1, all/1, any/1, member/1, literal/1, regex/1]).
-
+-export([cast_to_atom/1]).
 
 %%====================================================================
 %% Types
@@ -302,6 +302,51 @@ regex_3_test_() ->
     [?_assertEqual({error, format("~p is not matching the regular expression ~p", [Value, RE])},
 		   validate(regex(RE), Value))
      || Value <- Values, RE <- REs].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% -spec max_length(string()) -> validator(string(), string()).
+%% -spec max_length(S) -> validator(S, S) when S :: string() | binary().
+-spec max_length(S) -> validator(S, S) when S :: iodata().
+max_length(S) -> 
+    fun(T) ->
+	    case iolist_size(S) > T of
+		true -> {error, format("~p is longer than ~p", [S, T])};
+		false -> {ok, S}
+	    end
+    end.
+
+length_test_() ->
+    Values = [["He", <<"ll">>, ["o"]], "12345", "Bye"],
+    [?_assertMatch({ok, Value},
+		   validate(max_length(Value), 6))
+    || Value <- Values].
+
+length_1_test_() ->
+    Values = [<<"123">>, "Bye", ["defined"]],
+    Max_lengths = [2],
+    [?_assertEqual({error, format("~p is longer than ~p", [Value, Max])},
+		   validate(max_length(Value), Max))
+    || Value <- Values, Max <- Max_lengths].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec cast_to_atom(S) -> validator(S, S) when S :: string().
+cast_to_atom(S) ->
+    fun(T) ->
+	    case Atom = erlang:list_to_atom(S) =:= T of
+		true -> {ok, S};
+		false -> {error, format("~p and ~p are different",[Atom, T])}
+	    end
+    end.
+
+cast_atom_test_() ->
+    Values = ["Hello", "bye", "1"],
+    [?_assertEqual({ok, Value},
+		   validate(cast_to_atom(Value), erlang:list_to_atom(Value)))
+     || Value <- Values]
+	++
+	[?_assertNotMatch({ok, Value},
+			  validate(cast_to_atom(Value), atom))
+	 || Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
