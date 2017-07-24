@@ -21,6 +21,7 @@
 -export([invalid/0, valid/0]).
 -export([integer_from_string/0]).
 -export([compose/2, compose/1, all/1, any/1, member/1, literal/1, regex/1]).
+-export([max_length/1]).
 -export([cast_to_atom/1]).
 
 %%====================================================================
