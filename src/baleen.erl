@@ -20,7 +20,7 @@
 -export([predicate/1]).
 -export([invalid/0, valid/0]).
 -export([integer_from_string/0]).
--export([compose/2, compose/1, all/1, any/1, member/1, literal/1]).
+-export([compose/2, compose/1, all/1, any/1, member/1, literal/1, regex/1]).
 
 
 %%====================================================================
@@ -74,7 +74,7 @@ validate(V, X) -> V(X).
 -spec predicate(predicate(A)) -> validator(A,A) when A :: term().
 %% @doc Returns a validator given a predicate. When validating `X'
 %% with a predicate `P', if `P(X)' holds then `{ok, X}' is
-%% returned. Otherwise, `{error, <<"Improper term  \"X\"">>}' is
+%% returned. Otherwise, `{error, <<"Improper term X">>}' is
 %% returned.
 predicate(P) ->
   fun(X) ->
@@ -82,14 +82,14 @@ predicate(P) ->
         true ->
           {ok, X};
         false ->
-          {error, format("Improper term \"~w\"", [X])}
+          {error, format("Improper term ~p", [X])}
       end
   end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec invalid() -> validator(_,_).
 invalid() -> fun(X) ->
-                 {error, format("Invalid term \"~w\"", [X])}
+                 {error, format("Invalid term ~p", [X])}
              end.
 
 invalid_simple_test_() ->
@@ -126,12 +126,12 @@ integer_from_string() ->
   end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec compose(validator(A,B), validator(B,C)) -> validator(A,C).
+-spec compose(validator(A, B), validator(B, C)) -> validator(A, C).
 compose(V1, V2) ->
   fun (X1) ->
-      case validate(V1,X1) of
+      case validate(V1, X1) of
         {ok, X2} ->
-          validate(V2,X2);
+          validate(V2, X2);
         Error ->
           Error
       end
@@ -142,17 +142,17 @@ compose(V1, V2) ->
 compose(Validators) -> lists:foldr(fun compose/2, valid(), Validators).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec all(list(validator(A,B))) -> validator(A,B).
+-spec all(list(validator(A, B))) -> validator(A, B).
 all([]) -> valid();
 all([V|Vs]) -> 
     fun(T) ->
-	    case validate(V,T) of
+	    case validate(V, T) of
 		{ok, X1} ->
-		    case validate(all(Vs),T) of
+		    case validate(all(Vs), T) of
 			{ok, X2} -> 
 			    case X1 =:= X2 of
 				true -> {ok, X1};
-				false -> {error, format("\"~w\" and \"~w\" are not equal",[X1,X2])}
+				false -> {error, format("~p and ~p are not equal", [X1, X2])}
 			    end;
 			{error, Error} -> {error, Error}
 		    end;
@@ -166,29 +166,28 @@ all_test_() ->
                  validate(all([valid(), valid()]), Value))
    || Value <- Values]
   ++
-  [?_assertEqual({error, format("Invalid term \"~w\"",[Value])},
+  [?_assertEqual({error, format("Invalid term ~p", [Value])},
                  validate(all([valid(), invalid()]), Value))
    || Value <- Values]
   ++
-  [?_assertEqual({error, format("Invalid term \"~w\"",[Value])},
+  [?_assertEqual({error, format("Invalid term ~p", [Value])},
                  validate(all([invalid(), valid(), invalid()]), Value))
    || Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec any(list(validator(A,B))) -> validator(A,B).
+-spec any(list(validator(A, B))) -> validator(A, B).
 any([]) -> invalid();
 any([V|Vs]) -> 
     fun(T) ->
 	    case validate(V,T) of
-		{ok,X1} -> 
-		    %% ?debugMsg("El primero es correcto"),
+		{ok, X1} -> 
 		    {ok, X1};
 		{error, _Error1} ->
-		    case validate(any(Vs),T) of
+		    case validate(any(Vs), T) of
 			{ok, X2} ->
 			    {ok, X2};
 			{error, _Error2} -> 
-			    {error, format("There isn't any valid",[])}
+			    {error, format("There isn't any valid", [])}
 		    end
 	    end
     end.
@@ -212,42 +211,42 @@ any_test_() ->
    || Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec member(list(A)) -> validator(A,A).
+-spec member(list(A)) -> validator(A, A).
 member(L) ->
   fun(T) ->
        case lists:member(T, L) of
          true ->
            {ok, T};
          false ->
-           {error, format("\"~w\" is not member of \"~w\"",[T, L])}
+           {error, format("~p is not member of ~p", [T, L])}
        end
   end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec literal(A) -> validator(A,A).
+-spec literal(A) -> validator(A, A).
 literal(Term) ->
     fun(T) ->
 	    case Term =:= T of
-		true -> {ok,Term};
-		false -> {error, format("\"~w\" and \"~w\" not match", [Term, T])}
+		true -> {ok, Term};
+		false -> {error, format("~p and ~p not match", [Term, T])}
 	    end
     end.
 
 literal_test_() ->
     Values = [undefined, 1, <<"Hello">>, true, 0, -1],
     [?_assertMatch({ok, Value},
-		   validate(literal(Value),Value))
+		   validate(literal(Value), Value))
      || Value <- Values]
 	++
 	[?_assertMatch({error, _},
-		       validate(literal(false),Value))
+		       validate(literal(false), Value))
 	 || Value <- Values].
 
 literal_1_test_() ->
     Terms = [4, undefined, <<"Bye">>, "foo"],
     Values = [3, defined, <<"Hello">>, "bar"],
-    [?_assertEqual({error, format("\"~w\" and \"~w\" not match",[Term,Value])},
-		 validate(literal(Term),Value))
+    [?_assertEqual({error, format("~p and ~p not match", [Term, Value])},
+		 validate(literal(Term), Value))
     || Term <- Terms, Value <- Values].
 
 literal_2_test_() ->
@@ -260,14 +259,49 @@ literal_2_test_() ->
     || Literal <- Values, Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec regular_expression(String) -> validator(String, String).
-regular_expression(_RegularExpression) -> invalid().
+-spec regex(String) -> validator(String, String).
+regex(RegularExpression) ->
+    fun(T) ->
+	    case re:compile(RegularExpression) of
+		{ok, MP} ->
+		    case re:run(T, MP) of
+			{match, [{0,0}]} ->
+			    {error, format("~p is not matching the regular expression ~p", [T, RegularExpression])};
+			{match, _Captured} ->
+			    {ok, T};
+			nomatch -> 
+			    {error, format("~p is not matching the regular expression ~p", [T, RegularExpression])}
+		    end;
+		{error, ErrSpec} -> 
+		    {error, format("~w", [ErrSpec])}
+	    end
+    end.
 
-regular_expression_test_() ->
-    Values = ["The quick brown fox.", "There's a bluebird in my heart"],
+regex_test_() ->
+    Values = [<<"aab">>, <<"abababa">>],
     [?_assertMatch({ok, Value},
-		  validate(regular_expression(Value),Value))
-    || Value <- Values].
+		  validate(regex(<<"[ab]*">>), Value))
+     || Value <- Values].
+
+regex_1_test_() ->
+    Values = [<<"ababab">>, <<"aaaaaaaaaaab">>],
+    REs = [<<"^c[ab]*$">>],
+    [?_assertEqual({error, format("~p is not matching the regular expression ~p", [Value, RE])},
+		   validate(regex(RE), Value))
+     || Value <- Values, RE <- REs].
+
+regex_2_test_() ->
+    Values = [<<"ababcdcd">>, <<"ab">>],
+    [?_assertMatch({ok, Value},
+		   validate(regex(<<"(ab)[cd]*">>), Value))
+     || Value <- Values].
+
+regex_3_test_() ->
+    Values = ["Hola"],
+    REs = [<<"[ab]*">>],
+    [?_assertEqual({error, format("~p is not matching the regular expression ~p", [Value, RE])},
+		   validate(regex(RE), Value))
+     || Value <- Values, RE <- REs].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
