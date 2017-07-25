@@ -23,7 +23,8 @@
 -export([compose/2, compose/1, all/1, any/1, member/1, literal/1, regex/1]).
 -export([max_length/1]).
 -export([atom_from_string/0]).
-%% -export([cast_to_existing_atom/1]).
+-export([atom_from_binary/0]).
+
 %%====================================================================
 %% Types
 %%====================================================================
@@ -359,6 +360,16 @@ atom_2_test_() ->
     [?_assertEqual({ok, Atom},
 		   validate(atom_from_string(), erlang:atom_to_list(Atom)))
     || Atom <- Atoms].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec atom_from_binary() -> validator(binary(), atom()).
+atom_from_binary() -> invalid().
+
+binary_to_atom_test_() ->
+    Atoms = ['1234', 'Hello', 'Bye', an_atom],
+    [?_assertEqual({ok, Atom},
+		   validate(atom_from_binary(), erlang:atom_to_binary(Atom, utf8)))
+     || Atom <- Atoms].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
