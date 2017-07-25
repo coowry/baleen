@@ -354,6 +354,12 @@ atom_1_test_() ->
 		  validate(atom_from_string(), Value))
     || Value <- Values].
 
+atom_2_test_() ->
+    Atoms = ['1234', this_is_an_atom, 'John'],
+    [?_assertEqual({ok, Atom},
+		   validate(atom_from_string(), erlang:atom_to_list(Atom)))
+    || Atom <- Atoms].
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
 %% Internal functions
