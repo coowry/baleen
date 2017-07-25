@@ -22,8 +22,8 @@
 -export([integer_from_string/0]).
 -export([compose/2, compose/1, all/1, any/1, member/1, literal/1, regex/1]).
 -export([max_length/1]).
--export([cast_to_atom/1]).
-
+-export([atom_from_string/0]).
+%% -export([cast_to_existing_atom/1]).
 %%====================================================================
 %% Types
 %%====================================================================
@@ -330,24 +330,29 @@ length_1_test_() ->
     || Value <- Values, Max <- Max_lengths].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec cast_to_atom(S) -> validator(S, S) when S :: string().
-cast_to_atom(S) ->
-    fun(T) ->
-	    case Atom = erlang:list_to_atom(S) =:= T of
-		true -> {ok, S};
-		false -> {error, format("~p and ~p are different",[Atom, T])}
+-spec atom_from_string() -> validator(string(), atom()).
+atom_from_string() ->
+    fun(String) ->
+	    try erlang:list_to_existing_atom(String) of
+		Atom -> {ok, Atom}
+	    catch
+		_:_ -> {error, format("\"~p\" is not a valid string", [String])}
 	    end
     end.
 
-cast_atom_test_() ->
-    Values = ["Hello", "bye", "1"],
-    [?_assertEqual({ok, Value},
-		   validate(cast_to_atom(Value), erlang:list_to_atom(Value)))
-     || Value <- Values]
-	++
-	[?_assertNotMatch({ok, Value},
-			  validate(cast_to_atom(Value), atom))
-	 || Value <- Values].
+atom_test_() ->
+    Atoms = ['Hello', 'Bye', '1234', atom],
+    Strings = ["Hello", "Bye", "1234", "atom"],
+    Results = [{ok, Atom} || Atom <- Atoms],
+    Validations = [validate(atom_from_string(), String) || String <- Strings],
+    List = lists:zipwith(fun(X, Y) -> X =:= Y end, Results, Validations),
+    ?_assertEqual(lists:duplicate(length(List), true), List).
+
+atom_1_test_() ->
+    Values = [3, <<"Not an atom">>, ["Neither this"], "Nor this"],
+    [?_assertEqual({error, format("\"~p\" is not a valid string", [Value])},
+		  validate(atom_from_string(), Value))
+    || Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
