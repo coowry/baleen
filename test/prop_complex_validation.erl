@@ -8,13 +8,13 @@
 %%%%%%%%%%%%%%%%%%
 prop_member() ->
   ?FORALL({L, T}, {list(term()), term()},
-          lists:member(T,L) == is_ok(validate(member(L),T))).
+          lists:member(T,L) == ({ok, T} == validate(member(L),T))).
 
 prop_empty_member() ->
   ?FORALL(T, term(),
           case validate(member([]),T) of
-            {ok, T} -> {ok, T} == validate(invalid(),T);
-            {error, _} -> is_error(validate(invalid(),T))
+            {ok, T} -> false;
+            {error, _} -> true
           end).
 
 

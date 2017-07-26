@@ -15,7 +15,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 %% API exports
--export([ok_result/1, error_result/1, is_ok/1, is_error/1]).
+-export_type([validator/2]).
 -export([validate/2]).
 -export([predicate/1]).
 -export([invalid/0, valid/0]).
@@ -31,40 +31,13 @@
 
 -type result(R) :: {ok, R} | {error, binary()}.
 
--type validator(A,B) :: fun((A) -> result(B)).
-
 -type predicate(A) :: fun((A) -> boolean()).
+
+-opaque validator(A,B) :: fun((A) -> result(B)).
 
 %%====================================================================
 %% API functions
 %%====================================================================
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec is_ok(result(A)) -> boolean() when A :: term().
-is_ok({ok, _}) -> true;
-is_ok({error, Message}) when is_binary(Message) -> false;
-is_ok(_) -> throw(badarg).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec is_error(result(A)) -> boolean() when A :: term().
-is_error({error, Message}) when is_binary(Message) -> true;
-is_error({error, _}) -> throw(badarg);
-is_error({ok, _}) -> false;
-is_error(_) -> throw(badarg).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec ok_result(result(A)) -> A.
-%% @doc Returns `X' from `{ok, X}'.
-%% @throws badarg of parameter is not a tuple `{ok, _}'.
-ok_result({ok, X}) -> X;
-ok_result(_) -> throw(badarg).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec error_result(result(A)) -> binary() when A :: term().
-%% @doc Returns `Message' in `{error, Message}'.
-%% @throws badarg of parameter is not a tuple `{error, _}'.
-error_result({error, Message}) -> Message;
-error_result(_) -> throw(badarg).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec validate(validator(A,B), A) -> result(B).
