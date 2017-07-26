@@ -263,21 +263,22 @@ literal_2_test_() ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec regex(String) -> validator(String, String).
 regex(RegularExpression) ->
-    fun(T) ->
-	    case re:compile(RegularExpression) of
-		{ok, MP} ->
-		    case re:run(T, MP) of
-			{match, [{0,0}]} ->
-			    {error, format("~p is not matching the regular expression ~p", [T, RegularExpression])};
-			{match, _Captured} ->
-			    {ok, T};
-			nomatch -> 
-			    {error, format("~p is not matching the regular expression ~p", [T, RegularExpression])}
-		    end;
-		{error, ErrSpec} -> 
-		    {error, format("~w", [ErrSpec])}
-	    end
-    end.
+  %% Let's start with the compilation of the regular expression
+  case re:compile(RegularExpression) of
+    {ok, MP} ->
+      fun(T) ->
+          case re:run(T, MP) of
+            {match, [{0,0}]} ->
+              {error, format("~p is not matching the regular expression ~p", [T, RegularExpression])};
+            {match, _Captured} ->
+              {ok, T};
+            nomatch ->
+              {error, format("~p is not matching the regular expression ~p", [T, RegularExpression])}
+          end
+      end;
+    {error, _ErrSpec} ->
+      throw(badarg)
+  end.
 
 regex_test_() ->
     Values = [<<"aab">>, <<"abababa">>],
