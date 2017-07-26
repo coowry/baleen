@@ -220,7 +220,7 @@ literal_test_() ->
 literal_1_test_() ->
     Terms = [4, undefined, <<"Bye">>, "foo"],
     Values = [3, defined, <<"Hello">>, "bar"],
-    [?_assertEqual({error, format("~p and ~p not match", [Term, Value])},
+    [?_assertEqual({error, format("~p and ~p do not match", [Term, Value])},
 		 validate(literal(Term), Value))
     || Term <- Terms, Value <- Values].
 
