@@ -9,22 +9,52 @@
 %% {@type result(B)}.
 %%
 %% @TODO complete the documentation
+%% @TODO functions to be studied (and brought?) from Saul (named_validator, 
+%% @TODO names need to be shorter (eg. literal -> lit, atom_from_string -> string_to_atom
 -module(baleen).
 
 %% AH: we have some unit tests embedded in the implementation.
 -include_lib("eunit/include/eunit.hrl").
 
 %% API exports
--export_type([validator/2]).
 
+%% Types
+-export_type([validator/2, result/1, predicate/1]).
+
+%% Main validation function
 -export([validate/2]).
--export([predicate/1]).
+
+%% Functions for user validator injections
+-export([validator/1, predicate/1]).
+
+%% Validator composition
+-export([compose/2, compose/1, all/1, any/1]).
+
+%% Validator constructors
+%% TODO (AH): give a bit of structure (basic, complex, limiting...)
 -export([invalid/0, valid/0]).
--export([integer_from_string/0]).
--export([compose/2, compose/1, all/1, any/1, member/1, literal/1, regex/1]).
+-export([member/1]).
+-export([literal/1]).
+-export([regex/1]).
 -export([max_length/1]).
--export([atom_from_string/0]).
--export([atom_from_binary/0]).
+
+%% Type casting validators
+%% TODO: unify string and binary validators in one validator,
+%% eg. atom_from_string and atom_from_binary unified into
+%% to_atom(string()|binary()) -> validator(string()|binary(),
+%% atom()). Use type baleen:str/0 if finally defined.
+
+-export([integer_from_string/0]).
+-export([atom_from_string/0,
+         atom_from_binary/0]).
+
+%% Validator "lifters"
+%% TODO: to be decided/implemented
+%% -spec lifter1_aka_list(list(validator(A,B))) -> validator(list(A), B).
+%% -spec lifter2_aka_map(list(validator(A,B))) -> validator(list(A), list(B)).
+%% -spec lifter1_aka_other_map(validator(list(A),B)) -> list(validator(A, B)).
+%% -spec lifter2_aka_erlang_map(validator(map(A,B),C)) -> map(A,validator(B,C)).
+
 
 %%====================================================================
 %% Types
@@ -35,6 +65,8 @@
 -type predicate(A) :: fun((A) -> boolean()).
 
 -opaque validator(A,B) :: fun((A) -> result(B)).
+
+%% TODO: define our own string? -type str() -> string() | binary().
 
 %%====================================================================
 %% API functions
@@ -61,6 +93,13 @@ predicate(P) ->
           {error, format("Improper term ~p", [X])}
       end
   end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec validator(fun((A,B) -> result(A))) -> validator(A,B)
+                             when A :: term(), B :: term().
+%% @doc Returns a validator given a user defined function that
+%% validates.
+validator(V) -> V.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec invalid() -> validator(_,_).
