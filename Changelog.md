@@ -2,7 +2,8 @@
 
 ## Next release
 
-- **feature/regexp** Validation with regular expressions.
+- Validation with regular expressions.
+-  Validator of literals.
 - Initial release with some validators, validation composition and
   validation functions:
     - Basic validators:

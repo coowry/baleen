@@ -230,7 +230,7 @@ literal(Term) ->
     fun(T) ->
 	    case Term =:= T of
 		true -> {ok, Term};
-		false -> {error, format("~p and ~p not match", [Term, T])}
+		false -> {error, format("~p and ~p do not match", [Term, T])}
 	    end
     end.
 
