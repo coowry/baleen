@@ -16,6 +16,7 @@
 
 %% API exports
 -export_type([validator/2]).
+
 -export([validate/2]).
 -export([predicate/1]).
 -export([invalid/0, valid/0]).
