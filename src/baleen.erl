@@ -306,6 +306,17 @@ regex_3_test_() ->
 		   validate(regex(RE), Value))
      || Value <- Values, RE <- REs].
 
+regex_4_test_() ->
+  Email_Regexp = "^([0-9a-zA-Z]([-\\.\\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\\w]*[0-9a-zA-Z]\\.)+[a-zA-Z]{2,9})$",
+  Emails = ["aherranz@gmail.com", <<"angel.herranz@coowry.com">>],
+  No_Emails = ["1", "aherranz", <<"angel.herranz.coowry.com">>],
+  Email_Validator = regex(Email_Regexp),
+  [?_assertEqual({ok, Email}, validate(Email_Validator, Email))
+   || Email <- Emails ]
+  ++
+  [?_assertMatch({error, _}, validate(Email_Validator, No_Email))
+   || No_Email <- No_Emails ].
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% -spec max_length(string()) -> validator(string(), string()).
 %% -spec max_length(S) -> validator(S, S) when S :: string() | binary().
@@ -372,7 +383,6 @@ binary_to_atom_test_() ->
 		   validate(atom_from_binary(), erlang:atom_to_binary(Atom, utf8)))
      || Atom <- Atoms].
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
 %% Internal functions
 %%====================================================================
