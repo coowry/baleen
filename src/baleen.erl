@@ -37,7 +37,7 @@
 -export([literal/1]).
 -export([regex/1]).
 -export([max_length/1]).
--export([val_list/1, val_map/1, val_tuple/1]).
+-export([list_of/1, val_map/1, val_tuple/1]).
 -export([transform/1]).
 %% Type casting validators
 %% TODO: unify string and binary validators in one validator,
@@ -332,8 +332,6 @@ regex_4_test_() ->
 	 || No_Email <- No_Emails ].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% -spec max_length(string()) -> validator(string(), string()).
-%% -spec max_length(S) -> validator(S, S) when S :: string() | binary().
 -spec max_length(S) -> validator(S, S) when S :: iodata().
 max_length(S) -> 
     fun(T) ->
@@ -360,19 +358,18 @@ length_1_test_() ->
 -spec to_atom() -> validator(str(), atom()).
 to_atom() ->
     fun(T) when is_binary(T) ->
-	    try erlang:binary_to_atom(T, utf8) of
+	    try binary_to_atom(T, utf8) of
 		Atom -> {ok, Atom}
 	    catch
 		_:_ -> {error, format("\"~p\" is not a valid binary", [T])}
 	    end;
        (T) ->
-	    try erlang:list_to_existing_atom(T) of
+	    try list_to_existing_atom(T) of
 		Atom -> {ok, Atom}
 	    catch
-		_:_ -> {error, format("\"~p\" is not a valid string", [T])}
+		_:_ -> {error, format("~p is not a valid string", [T])}
 	    end
     end.
-		    
 
 to_atom_test_() ->
     Atoms = ['1234', 'Hello', 'Bye', an_atom],
@@ -385,8 +382,20 @@ to_atom_test_() ->
 	 || Atom <- Atoms].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec val_list(list(validator(A,B))) -> validator(A, list(B)).
-val_list(_L) -> invalid().
+-spec list_of(validator(A,B)) -> validator(list(A), list(B)).
+list_of(V) ->
+    fun(L) ->
+	    Results = lists:map(V, L),
+	    case lists:keyfind(error, 1, Results) of
+		false -> {ok, lists:map(fun(Tuple) -> element(2, Tuple) end, Results)};
+		Tuple -> {error, format("There was an error in a result: ~p", [Tuple])}
+	    end
+    end.
+
+list_of_test_() ->
+    Values = ["1", "43", "86", "95"],
+    ?_assertEqual({ok, lists:map(fun(X) -> erlang:list_to_integer(X) end, Values)},
+		  validate(list_of(integer_from_string()), Values)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec val_map(#{A => B}) -> validator(A,B).
@@ -398,12 +407,12 @@ val_map(_M) -> invalid().
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec val_tuple(T) -> validator(T, T).
-val_tuple(_T) -> invalid().
+val_tuple(_V) -> invalid().
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec transform(fun((A) -> B)) -> validator(A,B).
 transform(F) ->
-    fun(T) ->	    
+    fun(T) ->
 	    {ok, F(T)}
     end.
 
@@ -412,6 +421,7 @@ transform_test_() ->
     [?_assertEqual({ok, erlang:integer_to_list(Number)},
 		   validate(transform(fun erlang:integer_to_list/1), Number))
      || Number <- Numbers].
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
 %% Internal functions
