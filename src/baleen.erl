@@ -37,7 +37,7 @@
 -export([literal/1]).
 -export([regex/1]).
 -export([max_length/1]).
--export([list_of/1, val_map/1, val_tuple/1]).
+-export([list_of/1, map_of/2, tuple_of/1]).
 -export([transform/1]).
 %% Type casting validators
 %% TODO: unify string and binary validators in one validator,
@@ -394,20 +394,58 @@ list_of(V) ->
 
 list_of_test_() ->
     Values = ["1", "43", "86", "95"],
-    ?_assertEqual({ok, lists:map(fun(X) -> erlang:list_to_integer(X) end, Values)},
-		  validate(list_of(integer_from_string()), Values)).
+    [?_assertEqual({ok, lists:map(fun(X) -> erlang:list_to_integer(X) end, Values)},
+		  validate(list_of(integer_from_string()), Values))]
+	++
+	[?_assertMatch({error, _},
+		      validate(list_of(to_atom()), Values))].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec val_map(#{A => B}) -> validator(A,B).
-val_map(_M) -> invalid().
+-spec map_of(validator(A, B), validator(A,B)) -> validator(#{A => B}, #{A => B}).
+map_of(K, V) -> 
+    fun(Map) ->
+	    TupleList = maps:to_list(Map),
+	    Results = lists:flatten(lists:map(fun(Tuple) -> 
+						      erlang:tuple_to_list({K(element(1, Tuple)), V(element(2, Tuple))})
+					      end, TupleList)),
+	    case lists:keyfind(error, 1, Results) of
+		false -> {ok, maps:from_list(compose_map(Results))};
+		Tuple -> {error, format("There was an error in a result: ~p", [Tuple])}
+	    end
+    end.	    
+	    
 
+map_of_test_() ->
+    Values = #{<<"Hello">> => "1234", <<"Bye">> => "5678"},
+    [?_assertEqual({ok, #{'Bye' => 5678, 'Hello' => 1234}},
+		 validate(map_of(to_atom(), integer_from_string()), Values))]
+     ++
+	[?_assertMatch({error, _},
+		      validate(map_of(integer_from_string(), to_atom()), Values))
+	].
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% -spec map(validator(Key,Value)) -> validator(#{Key => Value},).
-%% map(_M) -> invalid().
+% map(_M) -> invalid().
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec val_tuple(T) -> validator(T, T).
-val_tuple(_V) -> invalid().
+-spec tuple_of(validator(A, B)) -> validator({A}, {B}).
+tuple_of(V) -> 
+    fun(T) ->
+	    Results = lists:map(V, erlang:tuple_to_list(T)),
+	    case lists:keyfind(error, 1, Results) of
+		false -> {ok, erlang:list_to_tuple(lists:map(fun(Tuple) -> element(2, Tuple) end, Results))};
+		Tuple -> {error, format("There was an error in a result: ~p", [Tuple])}
+	    end
+    end.
+
+tuple_of_test_() ->
+    Values = [<<"1">>, <<"Bye">>, <<"Hello">>, <<"atom">>],
+    [?_assertEqual({ok, erlang:list_to_tuple(lists:map(fun(X) -> erlang:binary_to_atom(X, utf8) end,Values))},
+		  validate(tuple_of(to_atom()), erlang:list_to_tuple(Values)))]
+	++
+	[?_assertMatch({error, _},
+		      validate(tuple_of(integer_from_string()),
+					erlang:list_to_tuple(Values)))].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec transform(fun((A) -> B)) -> validator(A,B).
@@ -430,3 +468,8 @@ transform_test_() ->
 format(Format, Terms) ->
     Message = io_lib:format(Format, Terms),
     unicode:characters_to_binary(Message).
+
+-spec compose_map(list(tuple())) -> list(tuple()).
+compose_map(L) -> lists:reverse(compose_map(L, [])).
+compose_map([], Acc) -> Acc;
+compose_map([H1, H2|T], Acc) -> compose_map(T, [{element(2, H1), element(2, H2)}|Acc]).
