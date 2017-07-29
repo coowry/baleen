@@ -45,7 +45,7 @@
 %% to_atom(string()|binary()) -> validator(string()|binary(),
 %% atom()). Use type baleen:str/0 if finally defined.
 
--export([integer_from_string/0]).
+-export([to_integer/0]).
 -export([to_atom/0]).
 
 %% Validator "lifters"
@@ -132,14 +132,30 @@ valid_test_() ->
       || Value <- Values ].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec integer_from_string() -> validator(string(), integer()).
-integer_from_string() ->
-    fun(Value) ->
+-spec to_integer() -> validator(str(), integer()).
+to_integer() ->
+    fun(Value) when is_binary(Value)->
+	    try erlang:binary_to_integer(Value) of
+		Integer -> {ok, Integer}
+	    catch
+		_:_ -> {error, format("\"~w\" is not an integer", [Value])}
+	    end;
+       (Value) ->
 	    case io_lib:fread("~d",Value) of
 		{ok, [Integer], []} -> {ok, Integer};
 		_ -> {error, format("\"~w\" is not an integer", [Value])}
 	    end
     end.
+
+to_integer_test_() ->
+    Values = [123, 456, 3, 25, 76],
+    [?_assertEqual({ok, Value},
+		  validate(to_integer(), erlang:integer_to_binary(Value)))
+     || Value <- Values]
+	++
+	[?_assertEqual({ok, Value},
+		      validate(to_integer(), erlang:integer_to_list(Value)))
+	|| Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec compose(validator(A, B), validator(B, C)) -> validator(A, C).
@@ -395,7 +411,7 @@ list_of(V) ->
 list_of_test_() ->
     Values = ["1", "43", "86", "95"],
     [?_assertEqual({ok, lists:map(fun(X) -> erlang:list_to_integer(X) end, Values)},
-		  validate(list_of(integer_from_string()), Values))]
+		  validate(list_of(to_integer()), Values))]
 	++
 	[?_assertMatch({error, _},
 		      validate(list_of(to_atom()), Values))].
@@ -418,10 +434,10 @@ map_of(K, V) ->
 map_of_test_() ->
     Values = #{<<"Hello">> => "1234", <<"Bye">> => "5678"},
     [?_assertEqual({ok, #{'Bye' => 5678, 'Hello' => 1234}},
-		 validate(map_of(to_atom(), integer_from_string()), Values))]
+		 validate(map_of(to_atom(), to_integer()), Values))]
      ++
 	[?_assertMatch({error, _},
-		      validate(map_of(integer_from_string(), to_atom()), Values))
+		      validate(map_of(to_integer(), to_atom()), Values))
 	].
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% -spec map(validator(Key,Value)) -> validator(#{Key => Value},).
@@ -444,7 +460,7 @@ tuple_of_test_() ->
 		  validate(tuple_of(to_atom()), erlang:list_to_tuple(Values)))]
 	++
 	[?_assertMatch({error, _},
-		      validate(tuple_of(integer_from_string()),
+		      validate(tuple_of(to_integer()),
 					erlang:list_to_tuple(Values)))].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -459,6 +475,32 @@ transform_test_() ->
     [?_assertEqual({ok, erlang:integer_to_list(Number)},
 		   validate(transform(fun erlang:integer_to_list/1), Number))
      || Number <- Numbers].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec to_float() -> validator(str(), float()).
+to_float() ->
+    fun(Value) when is_binary(Value) ->
+	    try erlang:binary_to_float(Value) of
+		Float -> {ok, Float}
+	    catch
+		_:_ -> {error, format("\"~p\" is not a float", [Value])}
+	    end;
+       (Value) ->
+	    case io_lib:fread("~f", Value) of
+		{ok, [Float], []} -> {ok, Float};
+		_ ->  {error, format("\"~p\" is not a float", [Value])}
+	    end
+    end.
+		    
+to_float_test_() ->
+    Values = [3.14, 17.3e-6, 0.000000000001],
+    [?_assertEqual({ok, Value},
+		  validate(to_float(), erlang:float_to_binary(Value)))
+    || Value <- Values]
+	++
+	    [?_assertEqual({ok, Value},
+		  validate(to_float(), erlang:float_to_list(Value)))
+    || Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
