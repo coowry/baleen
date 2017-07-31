@@ -1,6 +1,6 @@
 {application, baleen,
  [{description, "Data Validation in Erlang"},
-  {vsn, "0.1.0"},
+  {vsn, "0.0.1"},
   {registered, []},
   {applications,
    [kernel,
