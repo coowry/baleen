@@ -80,7 +80,7 @@
 validate(V, X) -> V(X).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec predicate(predicate(A)) -> validator(A,A) when A :: term().
+-spec predicate(predicate(A)) -> validator(A,A).
 %% @doc Returns a validator given a predicate. When validating `X'
 %% with a predicate `P', if `P(X)' holds then `{ok, X}' is
 %% returned. Otherwise, `{error, <<"Improper term X">>}' is
@@ -96,8 +96,7 @@ predicate(P) ->
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec validator(fun((A,B) -> result(A))) -> validator(A,B)
-						when A :: term(), B :: term().
+-spec validator(fun((A,B) -> result(A))) -> validator(A,B).
 %% @doc Returns a validator given a user defined function that
 %% validates.
 validator(V) -> V.
