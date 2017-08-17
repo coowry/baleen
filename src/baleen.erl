@@ -47,6 +47,7 @@
 
 -export([to_integer/0]).
 -export([to_atom/0]).
+-export([to_float/0]).
 
 %% Validator "lifters"
 %% TODO: to be decided/implemented
@@ -68,6 +69,10 @@
 
 -opaque validator(A,B) :: fun((A) -> result(B)).
 
+%%====================================================================
+%% Error messages
+%%====================================================================
+-define(INVALID_FLOAT(V), format("\"~p\" is not a float", [V])).
 
 %%====================================================================
 %% API functions
@@ -482,12 +487,12 @@ to_float() ->
 	    try erlang:binary_to_float(Value) of
 		Float -> {ok, Float}
 	    catch
-		_:_ -> {error, format("\"~p\" is not a float", [Value])}
+		_:_ -> {error, ?INVALID_FLOAT(Value)}
 	    end;
        (Value) ->
 	    case io_lib:fread("~f", Value) of
 		{ok, [Float], []} -> {ok, Float};
-		_ ->  {error, format("\"~p\" is not a float", [Value])}
+		_ ->  {error, ?INVALID_FLOAT(Value)}
 	    end
     end.
 		    
