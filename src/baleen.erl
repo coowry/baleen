@@ -421,12 +421,13 @@ list_of_test_() ->
 		      validate(list_of(to_atom()), Values))].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec map_of(validator(A, B), validator(A,B)) -> validator(#{A => B}, #{A => B}).
-map_of(K, V) -> 
+-spec map_of(validator(K1, K2), validator(V1, V2))
+            -> validator(#{K1 => V1}, #{K2 => V2}).
+map_of(VK, VV) ->
     fun(Map) ->
 	    TupleList = maps:to_list(Map),
 	    Results = lists:flatten(lists:map(fun(Tuple) -> 
-						      erlang:tuple_to_list({K(element(1, Tuple)), V(element(2, Tuple))})
+						      erlang:tuple_to_list({VK(element(1, Tuple)), VV(element(2, Tuple))})
 					      end, TupleList)),
 	    case lists:keyfind(error, 1, Results) of
 		false -> {ok, maps:from_list(compose_map(Results))};
@@ -515,7 +516,9 @@ format(Format, Terms) ->
     Message = io_lib:format(Format, Terms),
     unicode:characters_to_binary(Message).
 
--spec compose_map(list(tuple())) -> list(tuple()).
+-spec compose_map(list({K,V})) -> list({K,V}).
 compose_map(L) -> lists:reverse(compose_map(L, [])).
+
+-spec compose_map(list({K,V}), list({K,V})) -> list({K,V}).
 compose_map([], Acc) -> Acc;
 compose_map([H1, H2|T], Acc) -> compose_map(T, [{element(2, H1), element(2, H2)}|Acc]).
