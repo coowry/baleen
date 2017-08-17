@@ -290,7 +290,7 @@ literal_2_test_() ->
      || Literal <- Values, Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec regex(String) -> validator(String, String).
+-spec regex(String) -> validator(String, String) when String :: str().
 regex(RegularExpression) ->
     %% Let's start with the compilation of the regular expression
     case re:compile(RegularExpression) of
