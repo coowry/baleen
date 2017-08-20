@@ -39,6 +39,7 @@
 -export([max_length/1]).
 -export([list_of/1, map_of/2, tuple_of/1]).
 -export([transform/1]).
+-export([parse/2]).
 %% Type casting validators
 %% TODO: unify string and binary validators in one validator,
 %% eg. atom_from_string and atom_from_binary unified into
@@ -506,6 +507,51 @@ to_float_test_() ->
 	    [?_assertEqual({ok, Value},
 		  validate(to_float(), erlang:float_to_list(Value)))
     || Value <- Values].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec parse(#{K => {optional|required, validator(A,B)}},
+	    #{K => A}) ->
+		   #{valid => #{K => B},
+		     nonvalid => #{K => binary()},
+		     missing => [K],
+		     unexpected => [K]}.
+parse(Validator, Map) -> 
+    ListValidator = maps:to_list(Validator),
+    KeysMap = maps:keys(Map),
+    Unexpected = KeysMap -- maps:keys(Validator),
+    Missing = [element(1,Key) || Key <- ListValidator, element(1, element(2, Key)) =:= required] -- KeysMap,
+    ToValidate = KeysMap -- Unexpected,
+    MapToValidate = maps:from_list([{Key, maps:get(Key, Map)} || Key <- ToValidate]),
+    Results = maps:fold(fun(K, V, AccIn) ->
+				[{K, validate(element(2, maps:get(K, Validator)), V)} | AccIn]
+			end, [], MapToValidate),
+    Valid = lists:map(fun(E) ->
+			      {element(1, E), element(2, element(2, E))} % {Key, Value by calling result(Value)}
+				  end,
+		     lists:filter(fun(E) -> 
+					  element(1, element(2, E)) =:= ok
+				  end, Results)),
+    NonValid = lists:map(fun(E) ->
+			      {element(1, E), element(2, element(2, E))} % {Key, Value by calling result(Value)}
+				  end,
+		     lists:filter(fun(E) -> 
+					  element(1, element(2, E)) =:= error
+				  end, Results)),
+    #{valid => maps:from_list(Valid),
+      nonvalid => maps:from_list(NonValid),
+      missing => Missing,
+      unexpected => Unexpected}.
+
+parse_test_() ->
+    Validator = #{email => {required, regex("^([0-9a-zA-Z]([-\\.\\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\\w]*[0-9a-zA-Z]\\.)+[a-zA-Z]{2,9})$")}
+		 },
+    Info = #{email => "meruiz@email.com",
+	     field => "Some description"},
+    ?_assertEqual(#{valid => #{email => "meruiz@email.com"},
+		    nonvalid => #{},
+		    missing => [],
+		    unexpected => [field]},
+		 parse(Validator, Info)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
