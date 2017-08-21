@@ -516,29 +516,19 @@ to_float_test_() ->
 		     missing => [K],
 		     unexpected => [K]}.
 parse(Validator, Map) -> 
-    ListValidator = maps:to_list(Validator),
     KeysMap = maps:keys(Map),
     Unexpected = KeysMap -- maps:keys(Validator),
-    Missing = [element(1,Key) || Key <- ListValidator, element(1, element(2, Key)) =:= required] -- KeysMap,
+    Missing = [element(1,Tuple) || Tuple <- maps:to_list(Validator), element(1, element(2, Tuple)) =:= required] -- KeysMap,
     ToValidate = KeysMap -- Unexpected,
-    MapToValidate = maps:from_list([{Key, maps:get(Key, Map)} || Key <- ToValidate]),
+    MapToValidate = maps:from_list([{Key, maps:get(Key, Map)} || Key <- ToValidate]), % Only the valid or invalid keys
     Results = maps:fold(fun(K, V, AccIn) ->
-				[{K, validate(element(2, maps:get(K, Validator)), V)} | AccIn]
-			end, [], MapToValidate),
-    Valid = lists:map(fun(E) ->
-			      {element(1, E), element(2, element(2, E))} % {Key, Value by calling result(Value)}
-				  end,
-		     lists:filter(fun(E) -> 
-					  element(1, element(2, E)) =:= ok
-				  end, Results)),
-    NonValid = lists:map(fun(E) ->
-			      {element(1, E), element(2, element(2, E))} % {Key, Value by calling result(Value)}
-				  end,
-		     lists:filter(fun(E) -> 
-					  element(1, element(2, E)) =:= error
-				  end, Results)),
-    #{valid => maps:from_list(Valid),
-      nonvalid => maps:from_list(NonValid),
+				case validate(element(2, maps:get(K, Validator)), V) of
+				    {ok, V} -> {maps:put(K, V, element(1, AccIn)), element(2, AccIn)}; % Add to Valid map
+				    {error, Msg} -> {element(1, AccIn), maps:put(K, Msg, element(2, AccIn))} % Add to Invalid map
+				end
+			end, {#{},#{}}, MapToValidate),
+    #{valid => element(1, Results),
+      nonvalid => element(2, Results),
       missing => Missing,
       unexpected => Unexpected}.
 
