@@ -518,29 +518,49 @@ to_float_test_() ->
 parse(Validator, Map) -> 
     KeysMap = maps:keys(Map),
     Unexpected = KeysMap -- maps:keys(Validator),
-    Missing = [element(1,Tuple) || Tuple <- maps:to_list(Validator), element(1, element(2, Tuple)) =:= required] -- KeysMap,
+    Missing = [K || {K, {OptReq, _}} <- maps:to_list(Validator), OptReq =:= required] -- KeysMap,
     ToValidate = KeysMap -- Unexpected,
-    MapToValidate = maps:from_list([{Key, maps:get(Key, Map)} || Key <- ToValidate]), % Only the valid or invalid keys
-    Results = maps:fold(fun(K, V, AccIn) ->
-				case validate(element(2, maps:get(K, Validator)), V) of
-				    {ok, V} -> {maps:put(K, V, element(1, AccIn)), element(2, AccIn)}; % Add to Valid map
-				    {error, Msg} -> {element(1, AccIn), maps:put(K, Msg, element(2, AccIn))} % Add to Invalid map
-				end
-			end, {#{},#{}}, MapToValidate),
-    #{valid => element(1, Results),
-      nonvalid => element(2, Results),
+    MapToValidate = lists:foldl(fun(K, AccMap) -> AccMap #{K => maps:get(K, Map)} end,
+				#{},
+				ToValidate),
+    {Valids, Invalids} = maps:fold(fun(K, V, {AccValids, AccInvalids}) ->
+					   {_, Val} = maps:get(K, Validator),
+					   case validate(Val, V) of
+					       {ok, R} -> {AccValids #{K => R}, AccInvalids}; % Add to Valid map
+					       {error, Msg} -> {AccValids, AccInvalids #{K => Msg}} % Add to Invalid map
+					   end
+				   end, {#{},#{}}, MapToValidate),
+    #{valid => Valids,
+      nonvalid => Invalids,
       missing => Missing,
       unexpected => Unexpected}.
 
 parse_test_() ->
-    Validator = #{email => {required, regex("^([0-9a-zA-Z]([-\\.\\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\\w]*[0-9a-zA-Z]\\.)+[a-zA-Z]{2,9})$")}
+    Validator = #{msisdn => {required, regex("^\\+[1-9][0-9]{8,14}$")},
+		  email => {optional, regex("^([0-9a-zA-Z]([-\\.\\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\\w]*[0-9a-zA-Z]\\.)+[a-zA-Z]{2,9})$")}
 		 },
     Info = #{email => "meruiz@email.com",
 	     field => "Some description"},
     ?_assertEqual(#{valid => #{email => "meruiz@email.com"},
 		    nonvalid => #{},
-		    missing => [],
+		    missing => [msisdn],
 		    unexpected => [field]},
+		 parse(Validator, Info)).
+
+parse_1_test_() ->
+    EmailRegex = "^([0-9a-zA-Z]([-\\.\\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\\w]*[0-9a-zA-Z]\\.)+[a-zA-Z]{2,9})$",
+    Validator = #{msisdn => {required, regex("^\\+[1-9][0-9]{8,14}$")},
+		  email => {optional, regex(EmailRegex)},
+		  concept => {optional, compose(literal("A tip for your service"), to_atom())}
+		 },
+    Info = #{msisdn => "+34666657231",
+	     email => "meruiz.email.com",
+	     concept => "A tip for your service"},
+    ?_assertEqual(#{valid => #{msisdn => "+34666657231",
+			       concept => 'A tip for your service'},
+		    nonvalid => #{email => format("~p is not matching the regular expression ~p", ["meruiz.email.com", EmailRegex])},
+		    missing => [],
+		    unexpected => []},
 		 parse(Validator, Info)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
