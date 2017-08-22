@@ -102,7 +102,7 @@ predicate(P) ->
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec validator(fun((A,B) -> result(A))) -> validator(A,B).
+-spec validator(fun((A) -> result(B))) -> validator(A,B).
 %% @doc Returns a validator given a user defined function that
 %% validates.
 validator(V) -> V.
