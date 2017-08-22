@@ -39,7 +39,7 @@
 -export([max_length/1]).
 -export([list_of/1, map_of/2, tuple_of/1]).
 -export([transform/1]).
--export([parse/2]).
+-export([val_map/2]).
 %% Type casting validators
 %% TODO: unify string and binary validators in one validator,
 %% eg. atom_from_string and atom_from_binary unified into
@@ -509,13 +509,13 @@ to_float_test_() ->
     || Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec parse(#{K => {optional|required, validator(A,B)}},
+-spec val_map(#{K => {optional|required, validator(A,B)}},
 	    #{K => A}) ->
 		   #{valid => #{K => B},
 		     nonvalid => #{K => binary()},
 		     missing => [K],
 		     unexpected => [K]}.
-parse(Validator, Map) -> 
+val_map(Validator, Map) -> 
     KeysMap = maps:keys(Map),
     Unexpected = KeysMap -- maps:keys(Validator),
     Missing = [K || {K, {OptReq, _}} <- maps:to_list(Validator), OptReq =:= required] -- KeysMap,
@@ -535,7 +535,7 @@ parse(Validator, Map) ->
       missing => Missing,
       unexpected => Unexpected}.
 
-parse_test_() ->
+val_map_test_() ->
     Validator = #{msisdn => {required, regex("^\\+[1-9][0-9]{8,14}$")},
 		  email => {optional, regex("^([0-9a-zA-Z]([-\\.\\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\\w]*[0-9a-zA-Z]\\.)+[a-zA-Z]{2,9})$")}
 		 },
@@ -545,9 +545,9 @@ parse_test_() ->
 		    nonvalid => #{},
 		    missing => [msisdn],
 		    unexpected => [field]},
-		 parse(Validator, Info)).
+		 val_map(Validator, Info)).
 
-parse_1_test_() ->
+val_map_1_test_() ->
     EmailRegex = "^([0-9a-zA-Z]([-\\.\\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\\w]*[0-9a-zA-Z]\\.)+[a-zA-Z]{2,9})$",
     Validator = #{msisdn => {required, regex("^\\+[1-9][0-9]{8,14}$")},
 		  email => {optional, regex(EmailRegex)},
@@ -561,7 +561,7 @@ parse_1_test_() ->
 		    nonvalid => #{email => format("~p is not matching the regular expression ~p", ["meruiz.email.com", EmailRegex])},
 		    missing => [],
 		    unexpected => []},
-		 parse(Validator, Info)).
+		 val_map(Validator, Info)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
