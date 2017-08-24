@@ -353,27 +353,28 @@ regex_4_test_() ->
 	 || No_Email <- No_Emails ].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec max_length(S) -> validator(S, S) when S :: iodata().
-max_length(S) -> 
-    fun(T) ->
-	    case iolist_size(S) > T of
-		true -> {error, format("~p is longer than ~p", [S, T])};
+-spec max_length(non_neg_integer()) -> validator(S, S) when S :: iodata().
+max_length(I) -> 
+    fun(S) ->
+	    case iolist_size(S) > I of
+		true -> {error, format("The size of ~p is longer than ~p", [S, I])};
 		false -> {ok, S}
 	    end
     end.
 
-length_test_() ->
-    Values = [["He", <<"ll">>, ["o"]], "12345", "Bye"],
-    [?_assertMatch({ok, Value},
-		   validate(max_length(Value), 6))
-     || Value <- Values].
 
-length_1_test_() ->
-    Values = [<<"123">>, "Bye", ["defined"]],
-    Max_lengths = [2],
-    [?_assertEqual({error, format("~p is longer than ~p", [Value, Max])},
-		   validate(max_length(Value), Max))
-     || Value <- Values, Max <- Max_lengths].
+max_length_test_() ->
+    Values = [[<<"A tip">>], "Hello", <<"Bye">>],
+    [?_assertEqual({ok, Value},
+		   validate(max_length(140), Value))
+    || Value <- Values]
+	++
+	[?_assertMatch({error, _},
+		      validate(max_length(0), Value))
+	|| Value <- Values].
+	
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec to_atom() -> validator(str(), atom()).
