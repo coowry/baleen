@@ -39,6 +39,7 @@
 -export([max_length/1]).
 -export([list_of/1, map_of/2, tuple_of/1]).
 -export([transform/1]).
+-export([val_map/2]).
 %% Type casting validators
 %% TODO: unify string and binary validators in one validator,
 %% eg. atom_from_string and atom_from_binary unified into
@@ -47,6 +48,7 @@
 
 -export([to_integer/0]).
 -export([to_atom/0]).
+-export([to_float/0]).
 
 %% Validator "lifters"
 %% TODO: to be decided/implemented
@@ -68,6 +70,10 @@
 
 -opaque validator(A,B) :: fun((A) -> result(B)).
 
+%%====================================================================
+%% Error messages
+%%====================================================================
+-define(INVALID_FLOAT(V), format("\"~p\" is not a float", [V])).
 
 %%====================================================================
 %% API functions
@@ -80,7 +86,7 @@
 validate(V, X) -> V(X).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec predicate(predicate(A)) -> validator(A,A) when A :: term().
+-spec predicate(predicate(A)) -> validator(A,A).
 %% @doc Returns a validator given a predicate. When validating `X'
 %% with a predicate `P', if `P(X)' holds then `{ok, X}' is
 %% returned. Otherwise, `{error, <<"Improper term X">>}' is
@@ -96,8 +102,7 @@ predicate(P) ->
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec validator(fun((A,B) -> result(A))) -> validator(A,B)
-						when A :: term(), B :: term().
+-spec validator(fun((A) -> result(B))) -> validator(A,B).
 %% @doc Returns a validator given a user defined function that
 %% validates.
 validator(V) -> V.
@@ -291,7 +296,7 @@ literal_2_test_() ->
      || Literal <- Values, Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec regex(String) -> validator(String, String).
+-spec regex(String) -> validator(String, String) when String :: str().
 regex(RegularExpression) ->
     %% Let's start with the compilation of the regular expression
     case re:compile(RegularExpression) of
@@ -348,27 +353,28 @@ regex_4_test_() ->
 	 || No_Email <- No_Emails ].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec max_length(S) -> validator(S, S) when S :: iodata().
-max_length(S) -> 
-    fun(T) ->
-	    case iolist_size(S) > T of
-		true -> {error, format("~p is longer than ~p", [S, T])};
+-spec max_length(non_neg_integer()) -> validator(S, S) when S :: iodata().
+max_length(I) -> 
+    fun(S) ->
+	    case iolist_size(S) > I of
+		true -> {error, format("The size of ~p is longer than ~p", [S, I])};
 		false -> {ok, S}
 	    end
     end.
 
-length_test_() ->
-    Values = [["He", <<"ll">>, ["o"]], "12345", "Bye"],
-    [?_assertMatch({ok, Value},
-		   validate(max_length(Value), 6))
-     || Value <- Values].
 
-length_1_test_() ->
-    Values = [<<"123">>, "Bye", ["defined"]],
-    Max_lengths = [2],
-    [?_assertEqual({error, format("~p is longer than ~p", [Value, Max])},
-		   validate(max_length(Value), Max))
-     || Value <- Values, Max <- Max_lengths].
+max_length_test_() ->
+    Values = [[<<"A tip">>], "Hello", <<"Bye">>],
+    [?_assertEqual({ok, Value},
+		   validate(max_length(140), Value))
+    || Value <- Values]
+	++
+	[?_assertMatch({error, _},
+		      validate(max_length(0), Value))
+	|| Value <- Values].
+	
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec to_atom() -> validator(str(), atom()).
@@ -417,12 +423,13 @@ list_of_test_() ->
 		      validate(list_of(to_atom()), Values))].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec map_of(validator(A, B), validator(A,B)) -> validator(#{A => B}, #{A => B}).
-map_of(K, V) -> 
+-spec map_of(validator(K1, K2), validator(V1, V2))
+            -> validator(#{K1 => V1}, #{K2 => V2}).
+map_of(VK, VV) ->
     fun(Map) ->
 	    TupleList = maps:to_list(Map),
 	    Results = lists:flatten(lists:map(fun(Tuple) -> 
-						      erlang:tuple_to_list({K(element(1, Tuple)), V(element(2, Tuple))})
+						      erlang:tuple_to_list({VK(element(1, Tuple)), VV(element(2, Tuple))})
 					      end, TupleList)),
 	    case lists:keyfind(error, 1, Results) of
 		false -> {ok, maps:from_list(compose_map(Results))};
@@ -483,12 +490,12 @@ to_float() ->
 	    try erlang:binary_to_float(Value) of
 		Float -> {ok, Float}
 	    catch
-		_:_ -> {error, format("\"~p\" is not a float", [Value])}
+		_:_ -> {error, ?INVALID_FLOAT(Value)}
 	    end;
        (Value) ->
 	    case io_lib:fread("~f", Value) of
 		{ok, [Float], []} -> {ok, Float};
-		_ ->  {error, format("\"~p\" is not a float", [Value])}
+		_ ->  {error, ?INVALID_FLOAT(Value)}
 	    end
     end.
 		    
@@ -503,6 +510,61 @@ to_float_test_() ->
     || Value <- Values].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec val_map(#{K => {optional|required, validator(A,B)}},
+	    #{K => A}) ->
+		   #{valid => #{K => B},
+		     nonvalid => #{K => binary()},
+		     missing => [K],
+		     unexpected => [K]}.
+val_map(Validator, Map) -> 
+    KeysMap = maps:keys(Map),
+    Unexpected = KeysMap -- maps:keys(Validator),
+    Missing = [K || {K, {OptReq, _}} <- maps:to_list(Validator), OptReq =:= required] -- KeysMap,
+    ToValidate = KeysMap -- Unexpected,
+    MapToValidate = lists:foldl(fun(K, AccMap) -> AccMap #{K => maps:get(K, Map)} end,
+				#{},
+				ToValidate),
+    {Valids, Invalids} = maps:fold(fun(K, V, {AccValids, AccInvalids}) ->
+					   {_, Val} = maps:get(K, Validator),
+					   case validate(Val, V) of
+					       {ok, R} -> {AccValids #{K => R}, AccInvalids}; % Add to Valid map
+					       {error, Msg} -> {AccValids, AccInvalids #{K => Msg}} % Add to Invalid map
+					   end
+				   end, {#{},#{}}, MapToValidate),
+    #{valid => Valids,
+      nonvalid => Invalids,
+      missing => Missing,
+      unexpected => Unexpected}.
+
+val_map_test_() ->
+    Validator = #{msisdn => {required, regex("^\\+[1-9][0-9]{8,14}$")},
+		  email => {optional, regex("^([0-9a-zA-Z]([-\\.\\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\\w]*[0-9a-zA-Z]\\.)+[a-zA-Z]{2,9})$")}
+		 },
+    Info = #{email => "meruiz@email.com",
+	     field => "Some description"},
+    ?_assertEqual(#{valid => #{email => "meruiz@email.com"},
+		    nonvalid => #{},
+		    missing => [msisdn],
+		    unexpected => [field]},
+		 val_map(Validator, Info)).
+
+val_map_1_test_() ->
+    EmailRegex = "^([0-9a-zA-Z]([-\\.\\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\\w]*[0-9a-zA-Z]\\.)+[a-zA-Z]{2,9})$",
+    Validator = #{msisdn => {required, regex("^\\+[1-9][0-9]{8,14}$")},
+		  email => {optional, regex(EmailRegex)},
+		  concept => {optional, compose(literal("A tip for your service"), to_atom())}
+		 },
+    Info = #{msisdn => "+34666657231",
+	     email => "meruiz.email.com",
+	     concept => "A tip for your service"},
+    ?_assertEqual(#{valid => #{msisdn => "+34666657231",
+			       concept => 'A tip for your service'},
+		    nonvalid => #{email => format("~p is not matching the regular expression ~p", ["meruiz.email.com", EmailRegex])},
+		    missing => [],
+		    unexpected => []},
+		 val_map(Validator, Info)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
 %% Internal functions
 %%====================================================================
@@ -511,7 +573,9 @@ format(Format, Terms) ->
     Message = io_lib:format(Format, Terms),
     unicode:characters_to_binary(Message).
 
--spec compose_map(list(tuple())) -> list(tuple()).
+-spec compose_map(list({K,V})) -> list({K,V}).
 compose_map(L) -> lists:reverse(compose_map(L, [])).
+
+-spec compose_map(list({K,V}), list({K,V})) -> list({K,V}).
 compose_map([], Acc) -> Acc;
 compose_map([H1, H2|T], Acc) -> compose_map(T, [{element(2, H1), element(2, H2)}|Acc]).

@@ -1,5 +1,18 @@
 # Changelog
+## v0.2.0
 
+### Changed:
+- Function max_length/1 fixed.
+- Function validator/1 fixed.
+
+### Added:
+```erlang
+%% Type casting validators
+-export([to_float/1]).
+%% Validator constructors
+-export([val_map/2]).
+```
+ 
 ## v0.0.1
 
 - Initial release of baleen:
