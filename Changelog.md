@@ -1,4 +1,8 @@
 # Changelog
+## v0.2.1
+### Changed:
+- Function map_of/1 improved.
+- Internal function compose_map/2 improved.
 ## v0.2.0
 
 ### Changed:
