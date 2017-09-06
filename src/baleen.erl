@@ -31,32 +31,27 @@
 -export([compose/2, compose/1, all/1, any/1]).
 
 %% Validator constructors
-%% TODO (AH): give a bit of structure (basic, complex, limiting...)
+
+%% Basic validators
 -export([invalid/0, valid/0]).
 -export([member/1]).
 -export([literal/1]).
 -export([regex/1]).
 -export([max_length/1]).
--export([list_of/1, map_of/2, tuple_of/1]).
 -export([transform/1]).
--export([val_map/2]).
-%% Type casting validators
-%% TODO: unify string and binary validators in one validator,
-%% eg. atom_from_string and atom_from_binary unified into
-%% to_atom(string()|binary()) -> validator(string()|binary(),
-%% atom()). Use type baleen:str/0 if finally defined.
 
+%% Type casting validators
 -export([to_integer/0]).
 -export([to_atom/0]).
 -export([to_float/0]).
 
 %% Validator "lifters"
-%% TODO: to be decided/implemented
-%% -spec lifter1_aka_list(list(validator(A,B))) -> validator(list(A), B).
-%% -spec lifter2_aka_map(list(validator(A,B))) -> validator(list(A), list(B)).
-%% -spec lifter1_aka_other_map(validator(list(A),B)) -> list(validator(A, B)).
-%% -spec lifter2_aka_erlang_map(validator(map(A,B),C)) -> map(A,validator(B,C)).
+-export([list_of/1]).
+-export([map_of/2]).
+-export([tuple_of/1]).
 
+%% Reqpar
+-export([val_map/2]).
 
 %%====================================================================
 %% Types
