@@ -447,10 +447,6 @@ map_of_test_() ->
 		      validate(map_of(to_integer(), to_atom()), Values))
 	].
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% -spec map(validator(Key,Value)) -> validator(#{Key => Value},).
-% map(_M) -> invalid().
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec tuple_of(validator(A, B)) -> validator({A}, {B}).
 tuple_of(V) -> 
     fun(T) ->
