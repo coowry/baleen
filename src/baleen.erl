@@ -9,8 +9,6 @@
 %% {@type result(B)}.
 %%
 %% @TODO complete the documentation
-%% @TODO functions to be studied (and brought?) from Saul (named_validator, 
-%% @TODO names need to be shorter (eg. literal -> lit, atom_from_string -> string_to_atom
 -module(baleen).
 
 %% AH: we have some unit tests embedded in the implementation.
@@ -31,32 +29,27 @@
 -export([compose/2, compose/1, all/1, any/1]).
 
 %% Validator constructors
-%% TODO (AH): give a bit of structure (basic, complex, limiting...)
+
+%% Basic validators
 -export([invalid/0, valid/0]).
 -export([member/1]).
 -export([literal/1]).
 -export([regex/1]).
 -export([max_length/1]).
--export([list_of/1, map_of/2, tuple_of/1]).
 -export([transform/1]).
--export([val_map/2]).
-%% Type casting validators
-%% TODO: unify string and binary validators in one validator,
-%% eg. atom_from_string and atom_from_binary unified into
-%% to_atom(string()|binary()) -> validator(string()|binary(),
-%% atom()). Use type baleen:str/0 if finally defined.
 
+%% Type casting validators
 -export([to_integer/0]).
 -export([to_atom/0]).
 -export([to_float/0]).
 
 %% Validator "lifters"
-%% TODO: to be decided/implemented
-%% -spec lifter1_aka_list(list(validator(A,B))) -> validator(list(A), B).
-%% -spec lifter2_aka_map(list(validator(A,B))) -> validator(list(A), list(B)).
-%% -spec lifter1_aka_other_map(validator(list(A),B)) -> list(validator(A, B)).
-%% -spec lifter2_aka_erlang_map(validator(map(A,B),C)) -> map(A,validator(B,C)).
+-export([list_of/1]).
+-export([map_of/2]).
+-export([tuple_of/1]).
 
+%% Reqpar
+-export([val_map/2]).
 
 %%====================================================================
 %% Types
@@ -362,7 +355,6 @@ max_length(I) ->
 	    end
     end.
 
-
 max_length_test_() ->
     Values = [[<<"A tip">>], "Hello", <<"Bye">>],
     [?_assertEqual({ok, Value},
@@ -372,9 +364,6 @@ max_length_test_() ->
 	[?_assertMatch({error, _},
 		      validate(max_length(0), Value))
 	|| Value <- Values].
-	
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec to_atom() -> validator(str(), atom()).
@@ -428,15 +417,14 @@ list_of_test_() ->
 map_of(VK, VV) ->
     fun(Map) ->
 	    TupleList = maps:to_list(Map),
-	    Results = lists:flatten(lists:map(fun(Tuple) -> 
-						      erlang:tuple_to_list({VK(element(1, Tuple)), VV(element(2, Tuple))})
+	    Results = lists:flatten(lists:map(fun({K,V}) -> 
+						      erlang:tuple_to_list({VK(K), VV(V)})
 					      end, TupleList)),
 	    case lists:keyfind(error, 1, Results) of
 		false -> {ok, maps:from_list(compose_map(Results))};
 		Tuple -> {error, format("There was an error in a result: ~p", [Tuple])}
 	    end
     end.	    
-	    
 
 map_of_test_() ->
     Values = #{<<"Hello">> => "1234", <<"Bye">> => "5678"},
@@ -446,9 +434,6 @@ map_of_test_() ->
 	[?_assertMatch({error, _},
 		      validate(map_of(to_integer(), to_atom()), Values))
 	].
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% -spec map(validator(Key,Value)) -> validator(#{Key => Value},).
-% map(_M) -> invalid().
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec tuple_of(validator(A, B)) -> validator({A}, {B}).
@@ -578,4 +563,4 @@ compose_map(L) -> lists:reverse(compose_map(L, [])).
 
 -spec compose_map(list({K,V}), list({K,V})) -> list({K,V}).
 compose_map([], Acc) -> Acc;
-compose_map([H1, H2|T], Acc) -> compose_map(T, [{element(2, H1), element(2, H2)}|Acc]).
+compose_map([{ok, V1}, {ok, V2}|T], Acc) -> compose_map(T, [{V1, V2}|Acc]).
