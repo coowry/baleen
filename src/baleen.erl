@@ -428,8 +428,8 @@ list_of_test_() ->
 map_of(VK, VV) ->
     fun(Map) ->
 	    TupleList = maps:to_list(Map),
-	    Results = lists:flatten(lists:map(fun(Tuple) -> 
-						      erlang:tuple_to_list({VK(element(1, Tuple)), VV(element(2, Tuple))})
+	    Results = lists:flatten(lists:map(fun({K,V}) -> 
+						      erlang:tuple_to_list({VK(K), VV(V)})
 					      end, TupleList)),
 	    case lists:keyfind(error, 1, Results) of
 		false -> {ok, maps:from_list(compose_map(Results))};
