@@ -9,8 +9,6 @@
 %% {@type result(B)}.
 %%
 %% @TODO complete the documentation
-%% @TODO functions to be studied (and brought?) from Saul (named_validator, 
-%% @TODO names need to be shorter (eg. literal -> lit, atom_from_string -> string_to_atom
 -module(baleen).
 
 %% AH: we have some unit tests embedded in the implementation.
