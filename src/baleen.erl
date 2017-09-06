@@ -362,7 +362,6 @@ max_length(I) ->
 	    end
     end.
 
-
 max_length_test_() ->
     Values = [[<<"A tip">>], "Hello", <<"Bye">>],
     [?_assertEqual({ok, Value},
@@ -433,7 +432,6 @@ map_of(VK, VV) ->
 		Tuple -> {error, format("There was an error in a result: ~p", [Tuple])}
 	    end
     end.	    
-	    
 
 map_of_test_() ->
     Values = #{<<"Hello">> => "1234", <<"Bye">> => "5678"},
@@ -443,6 +441,7 @@ map_of_test_() ->
 	[?_assertMatch({error, _},
 		      validate(map_of(to_integer(), to_atom()), Values))
 	].
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec tuple_of(validator(A, B)) -> validator({A}, {B}).
 tuple_of(V) -> 
