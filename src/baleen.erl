@@ -578,4 +578,4 @@ compose_map(L) -> lists:reverse(compose_map(L, [])).
 
 -spec compose_map(list({K,V}), list({K,V})) -> list({K,V}).
 compose_map([], Acc) -> Acc;
-compose_map([H1, H2|T], Acc) -> compose_map(T, [{element(2, H1), element(2, H2)}|Acc]).
+compose_map([{ok, V1}, {ok, V2}|T], Acc) -> compose_map(T, [{V1, V2}|Acc]).
