@@ -372,9 +372,6 @@ max_length_test_() ->
 	[?_assertMatch({error, _},
 		      validate(max_length(0), Value))
 	|| Value <- Values].
-	
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec to_atom() -> validator(str(), atom()).
