@@ -273,7 +273,7 @@ list_of(V) ->
     fun(L) ->
 	    Results = lists:map(V, L),
 	    case lists:keyfind(error, 1, Results) of
-		false -> {ok, lists:map(fun(Tuple) -> element(2, Tuple) end, Results)};
+		false -> {ok, lists:map(fun({ok, Value}) -> Value end, Results)};
 		Tuple -> {error, format("There was an error in a result: ~p", [Tuple])}
 	    end
     end.
@@ -302,7 +302,7 @@ tuple_of(V) ->
     fun(T) ->
 	    Results = lists:map(V, erlang:tuple_to_list(T)),
 	    case lists:keyfind(error, 1, Results) of
-		false -> {ok, erlang:list_to_tuple(lists:map(fun(Tuple) -> element(2, Tuple) end, Results))};
+		false -> {ok, erlang:list_to_tuple(lists:map(fun({ok, Value}) -> Value end, Results))};
 		Tuple -> {error, format("There was an error in a result: ~p", [Tuple])}
 	    end
     end.
