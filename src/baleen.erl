@@ -8,7 +8,6 @@
 %% terms of type {@type A} and returns a validation result of type
 %% {@type result(B)}.
 %%
-%% @TODO complete the documentation
 -module(baleen).
 
 %% API exports
