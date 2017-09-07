@@ -1,9 +1,15 @@
 # Changelog
 
+## v0.2.3
+
+### Added:
+- All functions documented with EDoc.
+
+
 ## v0.2.2
 
 ### Changed:
-- Eunit tests moved from src directory to test directory.
+- EUnit tests moved from src directory to test directory.
 
 
 ## v0.2.1
