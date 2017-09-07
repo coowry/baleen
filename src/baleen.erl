@@ -72,7 +72,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec validate(validator(A,B), A) -> result(B).
 %% @doc Validates data with a validator. `X' is the term to be
-%% validated with validator `V'.n
+%% validated with validator `V'.
 validate(V, X) -> V(X).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -99,17 +99,22 @@ validator(V) -> V.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec invalid() -> validator(_,_).
+%% @doc Returns a validator that always fails.
 invalid() -> fun(X) ->
 		     {error, format("Invalid term ~p", [X])}
              end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec valid() -> validator(_,_).
+%% @doc Returns a validator that always validates.
 valid() ->
     fun(X) -> {ok, X} end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec to_integer() -> validator(str(), integer()).
+%% @doc Returns a validator that takes a `Value' and tries to
+%% cast to integer. If the cast success, `{ok, Integer}' is returned,
+%% otherwise, `{error, <<"Value is not an integer">>}' is returned.
 to_integer() ->
     fun(Value) when is_binary(Value)->
 	    try erlang:binary_to_integer(Value) of
@@ -126,6 +131,7 @@ to_integer() ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec compose(validator(A, B), validator(B, C)) -> validator(A, C).
+%% @doc Returns a validator that is a composition of two validators.
 compose(V1, V2) ->
     fun (X1) ->
 	    case validate(V1, X1) of
@@ -138,10 +144,12 @@ compose(V1, V2) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec compose(nonempty_list(validator(A,A))) -> validator(A,A).
+%% @doc Returns a validator that is a composition of a list of validators.
 compose(Validators) -> lists:foldr(fun compose/2, valid(), Validators).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec all(list(validator(A, B))) -> validator(A, B).
+%% @doc To be deprecated.
 all([]) -> valid();
 all([V|Vs]) -> 
     fun(T) ->
@@ -161,6 +169,7 @@ all([V|Vs]) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec any(list(validator(A, B))) -> validator(A, B).
+%% @doc Returns only one validator of a list of validators that matches.
 any([]) -> invalid();
 any([V|Vs]) -> 
     fun(T) ->
@@ -179,6 +188,8 @@ any([V|Vs]) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec member(list(A)) -> validator(A, A).
+%% @doc Returns a validator that matches only if the input is member
+%% of `L'.
 member(L) ->
     fun(T) ->
 	    case lists:member(T, L) of
@@ -191,6 +202,8 @@ member(L) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec literal(A) -> validator(A, A).
+%% @doc Returns a validator that matches only if the input is equals
+%% to `Term'.
 literal(Term) ->
     fun(T) ->
 	    case Term =:= T of
@@ -201,6 +214,8 @@ literal(Term) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec regex(String) -> validator(String, String) when String :: str().
+%% @doc Returns a validator that validates and `String' if matches 
+%% a regular expression given.
 regex(RegularExpression) ->
     %% Let's start with the compilation of the regular expression
     case re:compile(RegularExpression) of
@@ -221,6 +236,8 @@ regex(RegularExpression) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec max_length(non_neg_integer()) -> validator(S, S) when S :: iodata().
+%% @doc Returns a validator that validates an input only if its length
+%% is less or equal than the integer is specified.
 max_length(I) -> 
     fun(S) ->
 	    case iolist_size(S) > I of
@@ -231,6 +248,10 @@ max_length(I) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec to_atom() -> validator(str(), atom()).
+%% @doc Returns a validator that takes a `T' and tries to
+%% cast to atom. If the cast success, `{ok, Atom}' is returned,
+%% otherwise, `{error, <<"T is not a valid binary">>}' or
+%% `{error, <<"T is not a valid string">>}' is returned.
 to_atom() ->
     fun(T) when is_binary(T) ->
 	    try binary_to_atom(T, utf8) of
@@ -248,6 +269,7 @@ to_atom() ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec list_of(validator(A,B)) -> validator(list(A), list(B)).
+%% @doc Returns a validator that matches a list.
 list_of(V) ->
     fun(L) ->
 	    Results = lists:map(V, L),
@@ -260,6 +282,8 @@ list_of(V) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec map_of(validator(K1, K2), validator(V1, V2))
             -> validator(#{K1 => V1}, #{K2 => V2}).
+%% @doc Returns a validator that validates a map, whose Keys are
+%% validated by `VK' and Values are validated by `VV'. 
 map_of(VK, VV) ->
     fun(Map) ->
 	    TupleList = maps:to_list(Map),
@@ -274,6 +298,7 @@ map_of(VK, VV) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec tuple_of(validator(A, B)) -> validator({A}, {B}).
+%% @doc Returns a validator that matches a tuple.
 tuple_of(V) -> 
     fun(T) ->
 	    Results = lists:map(V, erlang:tuple_to_list(T)),
@@ -285,6 +310,7 @@ tuple_of(V) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec transform(fun((A) -> B)) -> validator(A,B).
+%% @doc Returns a validator that always success and applies `F'.
 transform(F) ->
     fun(T) ->
 	    {ok, F(T)}
@@ -292,6 +318,9 @@ transform(F) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec to_float() -> validator(str(), float()).
+%% @doc Returns a validator that takes a `Value' and tries to
+%% cast to float. If the cast success, `{ok, Float}' is returned,
+%% otherwise, `{error, <<"Value is not a float">>}' is returned.
 to_float() ->
     fun(Value) when is_binary(Value) ->
 	    try erlang:binary_to_float(Value) of
@@ -313,6 +342,9 @@ to_float() ->
 		     nonvalid => #{K => binary()},
 		     missing => [K],
 		     unexpected => [K]}.
+%% @doc Returns a map of the keys that matches, the keys that doesn't,
+%% the keys that are missing and the unexpected keys, and their
+%% corresponding values.
 val_map(Validator, Map) -> 
     KeysMap = maps:keys(Map),
     Unexpected = KeysMap -- maps:keys(Validator),
