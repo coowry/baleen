@@ -93,7 +93,7 @@ Examples:
 2> baleen:validate(Validator, ["1", "2", "3"]).
 {ok,[1,2,3]}
 3> baleen:validate(Validator, ["4", "Ooops", "6"]).
-{error,<<"Error in element \"Ooops\": \"\"Ooops\"\" is not an integer">>}
+{error,<<"Error in element \"Ooops\": \"Ooops\" is not an integer">>}
 ```
 
 
@@ -129,7 +129,7 @@ Examples:
 5> baleen:validate(Validator, #{one => "1", <<"two">> => "2", <<"three">> => "3"}).
 {error,<<"Error in key one: one is not a valid string">>}
 6> baleen:validate(Validator, #{"one" => "1", <<"two">> => "Two", <<"three">> => "3"}).
-{error,<<"Error in value \"Two\": \"\"Two\"\" is not an integer">>}
+{error,<<"Error in value \"Two\": \"Two\" is not an integer">>}
 ```
 
 
@@ -234,7 +234,7 @@ Examples:
 3> baleen:validate(Validator, <<"7">>).
 {ok, 7}
 4> baleen:validate(Validator, <<"Hello">>).
-{error,<<"\"<<\"Hello\">>\" is not an integer">>}
+{error,<<"<<\"Hello\">> is not an integer">>}
 ```
 
 
@@ -258,7 +258,8 @@ Examples:
 1> Validator = baleen:tuple_of(baleen:to_atom()).
 2> baleen:validate(Validator, {<<"hello">>, <<"1234">>, <<"bye">>}).
 {ok,{hello,'1234',bye}}
-3> baleen:validate(Validator, ). %% Error
+3> baleen:validate(Validator, {atom, <<"1234">>, <<"bye">>}).
+{error,<<"Error in atom: atom is not a valid string">>}
 ```
 
 
