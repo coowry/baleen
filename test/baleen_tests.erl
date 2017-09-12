@@ -30,20 +30,6 @@ to_integer_test_() ->
 		      baleen:validate(baleen:to_integer(), erlang:integer_to_list(Value)))
 	|| Value <- Values].
 
-all_test_() ->
-    Values = ["Hello", <<"By">>, 42],
-    [?_assertMatch({ok, Value},
-		   baleen:validate(baleen:all([baleen:valid(), baleen:valid()]), Value))
-     || Value <- Values]
-	++
-	[?_assertMatch({error, _},
-		       baleen:validate(baleen:all([baleen:valid(), baleen:invalid()]), Value))
-	 || Value <- Values]
-	++
-	[?_assertMatch({error, _},
-		       baleen:validate(baleen:all([baleen:invalid(), baleen:valid(), baleen:invalid()]), Value))
-	 || Value <- Values].
-
 any_test_() ->
     Values = ["Hello", <<"By">>, 42],
     [?_assertMatch({ok, Value},
