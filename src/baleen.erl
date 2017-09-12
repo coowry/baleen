@@ -44,7 +44,7 @@
 -export([map_of/2]).
 -export([tuple_of/1]).
 
-%% Reqpar
+%% Reqopt
 -export([val_map/2]).
 
 %%====================================================================
@@ -119,12 +119,12 @@ to_integer() ->
 	    try erlang:binary_to_integer(Value) of
 		Integer -> {ok, Integer}
 	    catch
-		_:_ -> {error, format("\"~p\" is not an integer", [Value])}
+		_:_ -> {error, format("~p is not an integer", [Value])}
 	    end;
        (Value) ->
 	    case io_lib:fread("~d",Value) of
 		{ok, [Integer], []} -> {ok, Integer};
-		_ -> {error, format("\"~p\" is not an integer", [Value])}
+		_ -> {error, format("~p is not an integer", [Value])}
 	    end
     end.
 
