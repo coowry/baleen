@@ -8,7 +8,6 @@
 %% terms of type {@type A} and returns a validation result of type
 %% {@type result(B)}.
 %%
-%% @TODO complete the documentation
 -module(baleen).
 
 %% API exports
@@ -23,7 +22,7 @@
 -export([validator/1, predicate/1]).
 
 %% Validator composition
--export([compose/2, compose/1, all/1, any/1]).
+-export([compose/2, compose/1, any/1]).
 
 %% Validator constructors
 
@@ -45,7 +44,7 @@
 -export([map_of/2]).
 -export([tuple_of/1]).
 
-%% Reqpar
+%% Reqopt
 -export([val_map/2]).
 
 %%====================================================================
@@ -120,12 +119,12 @@ to_integer() ->
 	    try erlang:binary_to_integer(Value) of
 		Integer -> {ok, Integer}
 	    catch
-		_:_ -> {error, format("\"~w\" is not an integer", [Value])}
+		_:_ -> {error, format("~p is not an integer", [Value])}
 	    end;
        (Value) ->
 	    case io_lib:fread("~d",Value) of
 		{ok, [Integer], []} -> {ok, Integer};
-		_ -> {error, format("\"~w\" is not an integer", [Value])}
+		_ -> {error, format("~p is not an integer", [Value])}
 	    end
     end.
 
@@ -146,26 +145,6 @@ compose(V1, V2) ->
 -spec compose(nonempty_list(validator(A,A))) -> validator(A,A).
 %% @doc Returns a validator that is a composition of a list of validators.
 compose(Validators) -> lists:foldr(fun compose/2, valid(), Validators).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec all(list(validator(A, B))) -> validator(A, B).
-%% @doc To be deprecated.
-all([]) -> valid();
-all([V|Vs]) -> 
-    fun(T) ->
-	    case validate(V, T) of
-		{ok, X1} ->
-		    case validate(all(Vs), T) of
-			{ok, X2} -> 
-			    case X1 =:= X2 of
-				true -> {ok, X1};
-				false -> {error, format("~p and ~p are not equal", [X1, X2])}
-			    end;
-			{error, Error} -> {error, Error}
-		    end;
-		{error, Error} -> {error, Error}
-	    end
-    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec any(list(validator(A, B))) -> validator(A, B).
@@ -272,10 +251,11 @@ to_atom() ->
 %% @doc Returns a validator that matches a list.
 list_of(V) ->
     fun(L) ->
-	    Results = lists:map(V, L),
-	    case lists:keyfind(error, 1, Results) of
-		false -> {ok, lists:map(fun(Tuple) -> element(2, Tuple) end, Results)};
-		Tuple -> {error, format("There was an error in a result: ~p", [Tuple])}
+	    Results = [{Term, validate(V,Term)} || Term <- L],
+	    Errors = [{Term, Msg} || {Term, {error, Msg}} <- Results],
+	    case Errors of
+		[] -> {ok , [Value || {_, {ok, Value}} <- Results]};
+		[ {Term, Msg} | _] -> {error, format("Error in element ~p: ~s", [Term, Msg])}
 	    end
     end.
 
@@ -286,13 +266,19 @@ list_of(V) ->
 %% validated by `VK' and Values are validated by `VV'. 
 map_of(VK, VV) ->
     fun(Map) ->
-	    TupleList = maps:to_list(Map),
-	    Results = lists:flatten(lists:map(fun({K,V}) -> 
-						      erlang:tuple_to_list({VK(K), VV(V)})
-					      end, TupleList)),
-	    case lists:keyfind(error, 1, Results) of
-		false -> {ok, maps:from_list(compose_map(Results))};
-		Tuple -> {error, format("There was an error in a result: ~p", [Tuple])}
+	    Keys = maps:keys(Map),
+	    Values = maps:values(Map),
+	    Results = [{{K,V},{validate(VK, K), validate(VV, V)}} || K <- Keys, V <- Values, maps:get(K, Map) =:= V],
+	    KeysErrors = [{K, Msg} || {{K, _},{{error, Msg}, _}} <- Results],
+	    ValuesErrors = [{V, Msg} || {{_, V}, {_, {error, Msg}}} <- Results],
+	    case KeysErrors of
+		[] -> 
+		    case ValuesErrors of
+			[] ->
+			    {ok, maps:from_list([{ValueK, ValueV} || {{_,_}, {{ok, ValueK}, {ok, ValueV}}} <- Results])};
+			[{V, Msg} | _] -> {error, format("Error in value ~p: ~s", [V, Msg])}
+		    end;
+		[{K, Msg} | _] -> {error, format("Error in key ~p: ~s", [K, Msg])}
 	    end
     end.	    
 
@@ -300,11 +286,13 @@ map_of(VK, VV) ->
 -spec tuple_of(validator(A, B)) -> validator({A}, {B}).
 %% @doc Returns a validator that matches a tuple.
 tuple_of(V) -> 
-    fun(T) ->
-	    Results = lists:map(V, erlang:tuple_to_list(T)),
-	    case lists:keyfind(error, 1, Results) of
-		false -> {ok, erlang:list_to_tuple(lists:map(fun(Tuple) -> element(2, Tuple) end, Results))};
-		Tuple -> {error, format("There was an error in a result: ~p", [Tuple])}
+    fun(Tuple) ->
+	    TupleList = tuple_to_list(Tuple),
+	    Results = [{T, validate(V, T)} || T <- TupleList],
+	    Errors = [{T, Msg} || {T, {error, Msg}} <- Results],
+	    case Errors of
+		[] -> {ok, list_to_tuple([Value || {_,{ok, Value}} <- Results])};
+		[{T, Msg} | _] -> {error, format("Error in ~p: ~s", [T, Msg])}
 	    end
     end.
 
@@ -373,10 +361,3 @@ val_map(Validator, Map) ->
 format(Format, Terms) ->
     Message = io_lib:format(Format, Terms),
     unicode:characters_to_binary(Message).
-
--spec compose_map(list({K,V})) -> list({K,V}).
-compose_map(L) -> lists:reverse(compose_map(L, [])).
-
--spec compose_map(list({K,V}), list({K,V})) -> list({K,V}).
-compose_map([], Acc) -> Acc;
-compose_map([{ok, V1}, {ok, V2}|T], Acc) -> compose_map(T, [{V1, V2}|Acc]).

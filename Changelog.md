@@ -1,5 +1,21 @@
 # Changelog
 
+
+## Next release
+
+## v1.0.0
+
+### Changed:
+- list_of error message improved: invalid term and message progressed.
+- map_of error message improved: invalid {key=>value} and message progressed.
+- tuple_of error message improved: invalid term and message progressed.
+
+### Removed:
+```erlang
+all/1
+```
+
+
 ## v0.2.3
 
 ### Added:
