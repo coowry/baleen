@@ -1,5 +1,12 @@
 # Changelog
 
+
+## Next release
+
+- list_of error message improved: invalid term and message progressed.
+- map_of error message improved: invalid {key=>value} and message progressed.
+- tuple_of error message improved: invalid term and message progressed.
+
 ## v0.2.3
 
 ### Added:
