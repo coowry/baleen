@@ -22,7 +22,7 @@
 -export([validator/1, predicate/1]).
 
 %% Validator composition
--export([compose/2, compose/1, all/1, any/1]).
+-export([compose/2, compose/1, any/1]).
 
 %% Validator constructors
 
@@ -145,26 +145,6 @@ compose(V1, V2) ->
 -spec compose(nonempty_list(validator(A,A))) -> validator(A,A).
 %% @doc Returns a validator that is a composition of a list of validators.
 compose(Validators) -> lists:foldr(fun compose/2, valid(), Validators).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec all(list(validator(A, B))) -> validator(A, B).
-%% @doc To be deprecated.
-all([]) -> valid();
-all([V|Vs]) -> 
-    fun(T) ->
-	    case validate(V, T) of
-		{ok, X1} ->
-		    case validate(all(Vs), T) of
-			{ok, X2} -> 
-			    case X1 =:= X2 of
-				true -> {ok, X1};
-				false -> {error, format("~p and ~p are not equal", [X1, X2])}
-			    end;
-			{error, Error} -> {error, Error}
-		    end;
-		{error, Error} -> {error, Error}
-	    end
-    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec any(list(validator(A, B))) -> validator(A, B).
