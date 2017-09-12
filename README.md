@@ -19,8 +19,8 @@ We define 3 types:
 
 * result(R):
 	
-	It's a tuple with the form `{ok, R}` or `{error, binary()}`, where the `binary()` is a message with a brief explanation of
-	why the data is invalid.
+	It's a tuple with the form `{ok, R}` or `{error, binary()}`, where the `binary()` is a message with a 
+	brief explanation of why the data is invalid.
 		
 * predicate(A):
 
