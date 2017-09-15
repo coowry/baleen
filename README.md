@@ -15,7 +15,7 @@ this is, a tuple like `{ok, B}` or `{error, binary()}`. We'll explain later them
 
 ## Types
 
-We define 3 types:
+We define 5 types:
 
 * result(R):
 	
@@ -29,6 +29,27 @@ We define 3 types:
 * str():
 
 	It's a type that can be a `binary()` or a `string()`.
+	
+* val_map_validator(K, A, B):
+
+	It's a map with the next form:
+	```erlang
+		#{K => {optional | required, validator(A, B)}}
+	```
+	where `K` is a `term()` type. It will be used in `val_map/2` as the first argument of the function.
+
+* val_map_result(K, B):
+
+	It's a map with the next form:
+	```erlang
+		#{valid => #{K => B},
+		  nonvalid => #{K => binary()},
+		  unexpected => [K],
+		  missing => [K]}
+	```
+	where the first value it's a map with the valid values, the second one it's a map with the values that couldn't be validated,
+	the third one it's a list where the keys that were unexpected, and the last one it's a list with the missing keys.
+	It will be used in `val_map/2` as the return of the function.
 
 ## Functions
 
@@ -263,8 +284,7 @@ Examples:
 ```
 
 
-### val_map(#{K => {optional|required, validator(A,B)}}, #{K => A}) -> #{valid => #{K => B}, nonvalid => #{K => binary()}, missing => [K], unexpected => [K]}.
-
+### val_map(val_map_validator(K, A, B), #{K => A}) -> val_map_result(K, B)
 
 Returns a map with the results of the validation of the maps passed as arguments.
 
