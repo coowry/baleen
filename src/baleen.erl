@@ -13,7 +13,7 @@
 %% API exports
 
 %% Types
--export_type([validator/2, result/1, predicate/1, str/0]).
+-export_type([validator/2, result/1, predicate/1, str/0, val_map_validator/3, val_map_result/2]).
 
 %% Main validation function
 -export([validate/2]).
@@ -58,6 +58,13 @@
 -type str() :: string() | binary().
 
 -opaque validator(A,B) :: fun((A) -> result(B)).
+
+-type val_map_validator(K, A, B) :: #{K => {optional | required, validator(A, B)}}.
+
+-type val_map_result(K, B) :: #{valid => #{K => B},
+				nonvalid => #{K => binary()},
+				unexpected => [K],
+				missing => [K]}.
 
 %%====================================================================
 %% Error messages
@@ -324,12 +331,9 @@ to_float() ->
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec val_map(#{K => {optional|required, validator(A,B)}},
+-spec val_map(val_map_validator(K, A, B),
 	    #{K => A}) ->
-		   #{valid => #{K => B},
-		     nonvalid => #{K => binary()},
-		     missing => [K],
-		     unexpected => [K]}.
+		     val_map_result(K, B).
 %% @doc Returns a map of the keys that matches, the keys that doesn't,
 %% the keys that are missing and the unexpected keys, and their
 %% corresponding values.
