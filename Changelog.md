@@ -4,6 +4,8 @@
 ## Next release
 
 ## v1.0.1
+
+### Added:
 -new types:
 ```erlang
 -export_type([validator/2, result/1, predicate/1, str/0, val_map_validator/3, val_map_result/2]).
