@@ -88,14 +88,14 @@ validate(V, X) -> V(X).
 %% returned. Otherwise, `{error, <<"Improper term X">>}' is
 %% returned.
 predicate(P) ->
-    fun(X) ->
-	    case P(X) of
-		true ->
-		    {ok, X};
-		false ->
-		    {error, format("Improper term ~p", [X])}
-	    end
-    end.
+  fun(X) ->
+      case P(X) of
+	true ->
+	  {ok, X};
+	false ->
+	  {error, format("Improper term ~p", [X])}
+      end
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec validator(fun((A) -> result(B))) -> validator(A,B).
@@ -107,14 +107,14 @@ validator(V) -> V.
 -spec invalid() -> validator(_,_).
 %% @doc Returns a validator that always fails.
 invalid() -> fun(X) ->
-		     {error, format("Invalid term ~p", [X])}
+		 {error, format("Invalid term ~p", [X])}
              end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec valid() -> validator(_,_).
 %% @doc Returns a validator that always validates.
 valid() ->
-    fun(X) -> {ok, X} end.
+  fun(X) -> {ok, X} end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec to_integer() -> validator(str(), integer()).
@@ -122,31 +122,31 @@ valid() ->
 %% cast to integer. If the cast success, `{ok, Integer}' is returned,
 %% otherwise, `{error, <<"Value is not an integer">>}' is returned.
 to_integer() ->
-    fun(Value) when is_binary(Value)->
-	    try erlang:binary_to_integer(Value) of
-		Integer -> {ok, Integer}
-	    catch
-		_:_ -> {error, format("~p is not an integer", [Value])}
-	    end;
-       (Value) ->
-	    case io_lib:fread("~d",Value) of
-		{ok, [Integer], []} -> {ok, Integer};
-		_ -> {error, format("~p is not an integer", [Value])}
-	    end
-    end.
+  fun(Value) when is_binary(Value)->
+      try erlang:binary_to_integer(Value) of
+	  Integer -> {ok, Integer}
+      catch
+	_:_ -> {error, format("~p is not an integer", [Value])}
+      end;
+     (Value) ->
+      case io_lib:fread("~d",Value) of
+	{ok, [Integer], []} -> {ok, Integer};
+	_ -> {error, format("~p is not an integer", [Value])}
+      end
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec compose(validator(A, B), validator(B, C)) -> validator(A, C).
 %% @doc Returns a validator that is a composition of two validators.
 compose(V1, V2) ->
-    fun (X1) ->
-	    case validate(V1, X1) of
-		{ok, X2} ->
-		    validate(V2, X2);
-		Error ->
-		    Error
-	    end
-    end.
+  fun (X1) ->
+      case validate(V1, X1) of
+	{ok, X2} ->
+	  validate(V2, X2);
+	Error ->
+	  Error
+      end
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec compose(nonempty_list(validator(A,A))) -> validator(A,A).
@@ -158,79 +158,79 @@ compose(Validators) -> lists:foldr(fun compose/2, valid(), Validators).
 %% @doc Returns only one validator of a list of validators that matches.
 any([]) -> invalid();
 any([V|Vs]) -> 
-    fun(T) ->
-	    case validate(V,T) of
-		{ok, X1} -> 
-		    {ok, X1};
-		{error, _Error1} ->
-		    case validate(any(Vs), T) of
-			{ok, X2} ->
-			    {ok, X2};
-			{error, _Error2} -> 
-			    {error, format("There isn't any valid", [])}
-		    end
-	    end
-    end.
+  fun(T) ->
+      case validate(V,T) of
+	{ok, X1} -> 
+	  {ok, X1};
+	{error, _Error1} ->
+	  case validate(any(Vs), T) of
+	    {ok, X2} ->
+	      {ok, X2};
+	    {error, _Error2} -> 
+	      {error, format("There isn't any valid", [])}
+	  end
+      end
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec member(list(A)) -> validator(A, A).
 %% @doc Returns a validator that matches only if the input is member
 %% of `L'.
 member(L) ->
-    fun(T) ->
-	    case lists:member(T, L) of
-		true ->
-		    {ok, T};
-		false ->
-		    {error, format("~p is not member of ~p", [T, L])}
-	    end
-    end.
+  fun(T) ->
+      case lists:member(T, L) of
+	true ->
+	  {ok, T};
+	false ->
+	  {error, format("~p is not member of ~p", [T, L])}
+      end
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec literal(A) -> validator(A, A).
 %% @doc Returns a validator that matches only if the input is equals
 %% to `Term'.
 literal(Term) ->
-    fun(T) ->
-	    case Term =:= T of
-		true -> {ok, Term};
-		false -> {error, format("~p and ~p do not match", [Term, T])}
-	    end
-    end.
+  fun(T) ->
+      case Term =:= T of
+	true -> {ok, Term};
+	false -> {error, format("~p and ~p do not match", [Term, T])}
+      end
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec regex(String) -> validator(String, String) when String :: str().
 %% @doc Returns a validator that validates and `String' if matches 
 %% a regular expression given.
 regex(RegularExpression) ->
-    %% Let's start with the compilation of the regular expression
-    case re:compile(RegularExpression) of
-	{ok, MP} ->
-	    fun(T) ->
-		    case re:run(T, MP) of
-			{match, [{0,0}]} ->
-			    {error, format("~p is not matching the regular expression ~p", [T, RegularExpression])};
-			{match, _Captured} ->
-			    {ok, T};
-			nomatch ->
-			    {error, format("~p is not matching the regular expression ~p", [T, RegularExpression])}
-		    end
-	    end;
-	{error, _ErrSpec} ->
-	    throw(badarg)
-    end.
+  %% Let's start with the compilation of the regular expression
+  case re:compile(RegularExpression) of
+    {ok, MP} ->
+      fun(T) ->
+	  case re:run(T, MP) of
+	    {match, [{0,0}]} ->
+	      {error, format("~p is not matching the regular expression ~p", [T, RegularExpression])};
+	    {match, _Captured} ->
+	      {ok, T};
+	    nomatch ->
+	      {error, format("~p is not matching the regular expression ~p", [T, RegularExpression])}
+	  end
+      end;
+    {error, _ErrSpec} ->
+      throw(badarg)
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec max_length(non_neg_integer()) -> validator(S, S) when S :: iodata().
 %% @doc Returns a validator that validates an input only if its length
 %% is less or equal than the integer is specified.
 max_length(I) -> 
-    fun(S) ->
-	    case iolist_size(S) > I of
-		true -> {error, format("The size of ~p is longer than ~p", [S, I])};
-		false -> {ok, S}
-	    end
-    end.
+  fun(S) ->
+      case iolist_size(S) > I of
+	true -> {error, format("The size of ~p is longer than ~p", [S, I])};
+	false -> {ok, S}
+      end
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec to_atom() -> validator(str(), atom()).
@@ -239,32 +239,32 @@ max_length(I) ->
 %% otherwise, `{error, <<"T is not a valid binary">>}' or
 %% `{error, <<"T is not a valid string">>}' is returned.
 to_atom() ->
-    fun(T) when is_binary(T) ->
-	    try binary_to_atom(T, utf8) of
-		Atom -> {ok, Atom}
-	    catch
-		_:_ -> {error, format("\"~p\" is not a valid binary", [T])}
-	    end;
-       (T) ->
-	    try list_to_existing_atom(T) of
-		Atom -> {ok, Atom}
-	    catch
-		_:_ -> {error, format("~p is not a valid string", [T])}
-	    end
-    end.
+  fun(T) when is_binary(T) ->
+      try binary_to_atom(T, utf8) of
+	  Atom -> {ok, Atom}
+      catch
+	_:_ -> {error, format("\"~p\" is not a valid binary", [T])}
+      end;
+     (T) ->
+      try list_to_existing_atom(T) of
+	  Atom -> {ok, Atom}
+      catch
+	_:_ -> {error, format("~p is not a valid string", [T])}
+      end
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec list_of(validator(A,B)) -> validator(list(A), list(B)).
 %% @doc Returns a validator that matches a list.
 list_of(V) ->
-    fun(L) ->
-	    Results = [{Term, validate(V,Term)} || Term <- L],
-	    Errors = [{Term, Msg} || {Term, {error, Msg}} <- Results],
-	    case Errors of
-		[] -> {ok , [Value || {_, {ok, Value}} <- Results]};
-		[ {Term, Msg} | _] -> {error, format("Error in element ~p: ~s", [Term, Msg])}
-	    end
-    end.
+  fun(L) ->
+      Results = [{Term, validate(V,Term)} || Term <- L],
+      Errors = [{Term, Msg} || {Term, {error, Msg}} <- Results],
+      case Errors of
+	[] -> {ok , [Value || {_, {ok, Value}} <- Results]};
+	[ {Term, Msg} | _] -> {error, format("Error in element ~p: ~s", [Term, Msg])}
+      end
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec map_of(validator(K1, K2), validator(V1, V2))
@@ -272,44 +272,44 @@ list_of(V) ->
 %% @doc Returns a validator that validates a map, whose Keys are
 %% validated by `VK' and Values are validated by `VV'. 
 map_of(VK, VV) ->
-    fun(Map) ->
-	    Keys = maps:keys(Map),
-	    Values = maps:values(Map),
-	    Results = [{{K,V},{validate(VK, K), validate(VV, V)}} || K <- Keys, V <- Values, maps:get(K, Map) =:= V],
-	    KeysErrors = [{K, Msg} || {{K, _},{{error, Msg}, _}} <- Results],
-	    ValuesErrors = [{V, Msg} || {{_, V}, {_, {error, Msg}}} <- Results],
-	    case KeysErrors of
-		[] -> 
-		    case ValuesErrors of
-			[] ->
-			    {ok, maps:from_list([{ValueK, ValueV} || {{_,_}, {{ok, ValueK}, {ok, ValueV}}} <- Results])};
-			[{V, Msg} | _] -> {error, format("Error in value ~p: ~s", [V, Msg])}
-		    end;
-		[{K, Msg} | _] -> {error, format("Error in key ~p: ~s", [K, Msg])}
-	    end
-    end.	    
+  fun(Map) ->
+      Keys = maps:keys(Map),
+      Values = maps:values(Map),
+      Results = [{{K,V},{validate(VK, K), validate(VV, V)}} || K <- Keys, V <- Values, maps:get(K, Map) =:= V],
+      KeysErrors = [{K, Msg} || {{K, _},{{error, Msg}, _}} <- Results],
+      ValuesErrors = [{V, Msg} || {{_, V}, {_, {error, Msg}}} <- Results],
+      case KeysErrors of
+	[] -> 
+	  case ValuesErrors of
+	    [] ->
+	      {ok, maps:from_list([{ValueK, ValueV} || {{_,_}, {{ok, ValueK}, {ok, ValueV}}} <- Results])};
+	    [{V, Msg} | _] -> {error, format("Error in value ~p: ~s", [V, Msg])}
+	  end;
+	[{K, Msg} | _] -> {error, format("Error in key ~p: ~s", [K, Msg])}
+      end
+  end.	    
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec tuple_of(validator(A, B)) -> validator({A}, {B}).
 %% @doc Returns a validator that matches a tuple.
 tuple_of(V) -> 
-    fun(Tuple) ->
-	    TupleList = tuple_to_list(Tuple),
-	    Results = [{T, validate(V, T)} || T <- TupleList],
-	    Errors = [{T, Msg} || {T, {error, Msg}} <- Results],
-	    case Errors of
-		[] -> {ok, list_to_tuple([Value || {_,{ok, Value}} <- Results])};
-		[{T, Msg} | _] -> {error, format("Error in ~p: ~s", [T, Msg])}
-	    end
-    end.
+  fun(Tuple) ->
+      TupleList = tuple_to_list(Tuple),
+      Results = [{T, validate(V, T)} || T <- TupleList],
+      Errors = [{T, Msg} || {T, {error, Msg}} <- Results],
+      case Errors of
+	[] -> {ok, list_to_tuple([Value || {_,{ok, Value}} <- Results])};
+	[{T, Msg} | _] -> {error, format("Error in ~p: ~s", [T, Msg])}
+      end
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec transform(fun((A) -> B)) -> validator(A,B).
 %% @doc Returns a validator that always success and applies `F'.
 transform(F) ->
-    fun(T) ->
-	    {ok, F(T)}
-    end.
+  fun(T) ->
+      {ok, F(T)}
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec to_float() -> validator(str(), float()).
@@ -317,45 +317,45 @@ transform(F) ->
 %% cast to float. If the cast success, `{ok, Float}' is returned,
 %% otherwise, `{error, <<"Value is not a float">>}' is returned.
 to_float() ->
-    fun(Value) when is_binary(Value) ->
-	    try erlang:binary_to_float(Value) of
-		Float -> {ok, Float}
-	    catch
-		_:_ -> {error, ?INVALID_FLOAT(Value)}
-	    end;
-       (Value) ->
-	    case io_lib:fread("~f", Value) of
-		{ok, [Float], []} -> {ok, Float};
-		_ ->  {error, ?INVALID_FLOAT(Value)}
-	    end
-    end.
+  fun(Value) when is_binary(Value) ->
+      try erlang:binary_to_float(Value) of
+	  Float -> {ok, Float}
+      catch
+	_:_ -> {error, ?INVALID_FLOAT(Value)}
+      end;
+     (Value) ->
+      case io_lib:fread("~f", Value) of
+	{ok, [Float], []} -> {ok, Float};
+	_ ->  {error, ?INVALID_FLOAT(Value)}
+      end
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec val_map(val_map_validator(K, A, B),
-	    #{K => A}) ->
-		     val_map_result(K, B).
+	      #{K => A}) ->
+		 val_map_result(K, B).
 %% @doc Returns a map of the keys that matches, the keys that doesn't,
 %% the keys that are missing and the unexpected keys, and their
 %% corresponding values.
 val_map(Validator, Map) -> 
-    KeysMap = maps:keys(Map),
-    Unexpected = KeysMap -- maps:keys(Validator),
-    Missing = [K || {K, {OptReq, _}} <- maps:to_list(Validator), OptReq =:= required] -- KeysMap,
-    ToValidate = KeysMap -- Unexpected,
-    MapToValidate = lists:foldl(fun(K, AccMap) -> AccMap #{K => maps:get(K, Map)} end,
-				#{},
-				ToValidate),
-    {Valids, Invalids} = maps:fold(fun(K, V, {AccValids, AccInvalids}) ->
-					   {_, Val} = maps:get(K, Validator),
-					   case validate(Val, V) of
-					       {ok, R} -> {AccValids #{K => R}, AccInvalids}; % Add to Valid map
-					       {error, Msg} -> {AccValids, AccInvalids #{K => Msg}} % Add to Invalid map
-					   end
-				   end, {#{},#{}}, MapToValidate),
-    #{valid => Valids,
-      nonvalid => Invalids,
-      missing => Missing,
-      unexpected => Unexpected}.
+  KeysMap = maps:keys(Map),
+  Unexpected = KeysMap -- maps:keys(Validator),
+  Missing = [K || {K, {OptReq, _}} <- maps:to_list(Validator), OptReq =:= required] -- KeysMap,
+  ToValidate = KeysMap -- Unexpected,
+  MapToValidate = lists:foldl(fun(K, AccMap) -> AccMap #{K => maps:get(K, Map)} end,
+			      #{},
+			      ToValidate),
+  {Valids, Invalids} = maps:fold(fun(K, V, {AccValids, AccInvalids}) ->
+				     {_, Val} = maps:get(K, Validator),
+				     case validate(Val, V) of
+				       {ok, R} -> {AccValids #{K => R}, AccInvalids}; % Add to Valid map
+				       {error, Msg} -> {AccValids, AccInvalids #{K => Msg}} % Add to Invalid map
+				     end
+				 end, {#{},#{}}, MapToValidate),
+  #{valid => Valids,
+    nonvalid => Invalids,
+    missing => Missing,
+    unexpected => Unexpected}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
@@ -363,5 +363,5 @@ val_map(Validator, Map) ->
 %%====================================================================
 -spec format(io:format(), [term()]) -> binary().
 format(Format, Terms) ->
-    Message = io_lib:format(Format, Terms),
-    unicode:characters_to_binary(Message).
+  Message = io_lib:format(Format, Terms),
+  unicode:characters_to_binary(Message).
