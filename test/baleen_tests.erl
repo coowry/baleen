@@ -131,6 +131,28 @@ to_atom_test_() ->
 		       baleen:validate(baleen:to_atom(), erlang:atom_to_binary(Atom, utf8)))
 	 || Atom <- Atoms].
 
+to_binary_test_() ->
+    [?_assertEqual({ok, <<"Hola">>},
+		   baleen:validate(baleen:to_binary(), "Hola")),
+     ?_assertEqual({ok, <<"Hola">>},
+		   baleen:validate(baleen:to_binary(), <<"Hola">>)),
+     ?_assertEqual({error, <<"1234 is not a string nor a binary">>},
+		   baleen:validate(baleen:to_binary(), 1234)),
+     ?_assertEqual({error, <<"true is not a string nor a binary">>},
+		   baleen:validate(baleen:to_binary(), true))
+    ].
+
+to_string_test_() ->
+    [?_assertEqual({ok, "Hola"},
+		   baleen:validate(baleen:to_string(), "Hola")),
+     ?_assertEqual({ok, "Hola"},
+		   baleen:validate(baleen:to_string(), <<"Hola">>)),
+     ?_assertEqual({error, <<"1234 is not a string nor a binary">>},
+		   baleen:validate(baleen:to_string(), 1234)),
+     ?_assertEqual({error, <<"true is not a string nor a binary">>},
+		   baleen:validate(baleen:to_string(), true))
+    ].
+
 list_of_test_() ->
     Values = ["1", "43", "86", "95"],
     [?_assertEqual({ok, lists:map(fun(X) -> erlang:list_to_integer(X) end, Values)},

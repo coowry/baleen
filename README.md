@@ -338,6 +338,36 @@ Examples:
 {error, <<"Is not an integer">>}
 ```
 
+### to_string() -> validator(str(), string())
+
+Returns a validator in order to cast to integer.
+
+Examples:
+```erlang
+1> Validator = baleen:to_string().
+2> baleen:validate(Validator, "Hello").
+{ok, "Hello"}
+3> baleen:validate(Validator, <<"Hello">>).
+{ok, "Hello"}
+4> baleen:validate(Validator, hello).
+{error,<<"hello is not a string nor a binary">>}
+```
+
+### to_binary() -> validator(str(), binary())
+
+Returns a validator in order to cast to integer.
+
+Examples:
+```erlang
+1> Validator = baleen:to_binary().
+2> baleen:validate(Validator, "Hello").
+{ok, <<"Hello">>}
+3> baleen:validate(Validator, <<"Hello">>).
+{ok, <<"Hello">>}
+4> baleen:validate(Validator, hello).
+{error,<<"hello is not a string nor a binary">>}
+```
+
 ## Installation and usage
 
 Baleen is a `rebar3` project:

@@ -38,6 +38,9 @@
 -export([to_integer/0]).
 -export([to_atom/0]).
 -export([to_float/0]).
+-export([to_binary/0]).
+-export([to_string/0]).
+
 
 %% Validator "lifters"
 -export([list_of/1]).
@@ -356,6 +359,42 @@ val_map(Validator, Map) ->
     nonvalid => Invalids,
     missing => Missing,
     unexpected => Unexpected}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec to_binary() -> validator(str(), binary()).
+%% @doc Returns a validator that takes a `Value' and tries to
+%% cast to binary. If the cast success, `{ok, Binary}' is returned,
+%% otherwise, `{error, <<"Value is not an binary">>}' is returned.
+to_binary() ->
+  fun(Value) when is_binary(Value)-> 
+	  {ok, Value};
+     (Value) ->
+      try list_to_binary(Value) of
+	  Binary -> {ok, Binary}
+      catch
+	  _:_ -> {error,  format("~p is not a string nor a binary", [Value])}
+      end
+  end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec to_string() -> validator(str(), string()).
+%% @doc Returns a validator that takes a `Value' and tries to
+%% cast to str. If the cast success, `{ok, Str}' is returned,
+%% otherwise, `{error, <<"Value is not an str">>}' is returned.
+to_string() ->
+  fun(Value) when is_binary(Value)-> 
+	  try binary_to_list(Value) of
+	      String -> {ok, String}
+	  catch
+	      _:_ -> {error,  format("~p is not a string nor a binary", [Value])}
+	  end;
+     (Value) ->
+	  try io_lib:fread("~s", Value) of
+	     {ok, [String], []} -> {ok, String}
+	  catch
+	      _:_ -> {error,  format("~p is not a string nor a binary", [Value])}
+	  end
+  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
