@@ -338,6 +338,108 @@ Examples:
 {error, <<"Is not an integer">>}
 ```
 
+### to_string() -> validator(str(), string())
+
+Returns a validator in order to cast to integer.
+
+Examples:
+```erlang
+1> Validator = baleen:to_string().
+2> baleen:validate(Validator, "Hello").
+{ok, "Hello"}
+3> baleen:validate(Validator, <<"Hello">>).
+{ok, "Hello"}
+4> baleen:validate(Validator, hello).
+{error,<<"hello is not a string nor a binary">>}
+```
+
+### to_binary() -> validator(str(), binary())
+
+Returns a validator in order to cast to integer.
+
+Examples:
+```erlang
+1> Validator = baleen:to_binary().
+2> baleen:validate(Validator, "Hello").
+{ok, <<"Hello">>}
+3> baleen:validate(Validator, <<"Hello">>).
+{ok, <<"Hello">>}
+4> baleen:validate(Validator, hello).
+{error,<<"hello is not a string nor a binary">>}
+```
+
+### between(integer(), integer()) -> validator(integer(), integer())
+
+Check if a Value is between (Min, Max).
+
+Examples:
+```erlang
+1> Validator = baleen:between(1,4).
+#Fun<baleen.21.79860976>
+2> baleen:validate(Validator, 3).
+{ok,3}
+3> baleen:validate(Validator, 1).
+{error,<<"1 is not in range between (1, 4)">>}
+4> baleen:validate(Validator, 4).
+{error,<<"4 is not in range between (1, 4)">>}
+5> baleen:validate(Validator, a).
+{error,<<"a is not an integer">>}
+```
+
+### between_open_start(integer(), integer()) -> validator(integer(), integer())
+
+Check if a Value is between [Min, Max).
+
+Examples:
+```erlang
+1> Validator = baleen:between_open_start(1,4).
+#Fun<baleen.22.79860976>
+2> baleen:validate(Validator, 2).
+{ok,2}
+3> baleen:validate(Validator, 1).
+{ok,1}
+4> baleen:validate(Validator, 4).
+{error,<<"4 is not in range between [1, 4)">>}
+5> baleen:validate(Validator, a).
+{error,<<"a is not an integer">>}
+```
+
+### between_open_end(integer(), integer()) -> validator(integer(), integer())
+
+Check if a Value is between (Min, Max].
+
+Examples:
+```erlang
+1> Validator = baleen:between_open_end(1,4).  
+#Fun<baleen.23.79860976>
+2> baleen:validate(Validator, 2).
+{ok,2}
+3> baleen:validate(Validator, 4).
+{ok,4}
+4> baleen:validate(Validator, 1).
+{error,<<"1 is not in range between (1, 4]">>}
+5> baleen:validate(Validator, a).
+{error,<<"a is not an integer">>}
+```
+
+### between_open(integer(), integer()) -> validator(integer(), integer())
+
+Check if a Value is between [Min, Max].
+
+Examples:
+```erlang
+1> Validator = baleen:between_open(1,4).    
+#Fun<baleen.24.79860976>
+2> baleen:validate(Validator, 2).       
+{ok,2}
+3> baleen:validate(Validator, 1).
+{ok,1}
+4> baleen:validate(Validator, 4).
+{ok,4}
+5> baleen:validate(Validator, a).
+{error,<<"a is not an integer">>}
+```
+
 ## Installation and usage
 
 Baleen is a `rebar3` project:

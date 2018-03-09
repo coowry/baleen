@@ -131,6 +131,28 @@ to_atom_test_() ->
 		       baleen:validate(baleen:to_atom(), erlang:atom_to_binary(Atom, utf8)))
 	 || Atom <- Atoms].
 
+to_binary_test_() ->
+    [?_assertEqual({ok, <<"Hola">>},
+		   baleen:validate(baleen:to_binary(), "Hola")),
+     ?_assertEqual({ok, <<"Hola">>},
+		   baleen:validate(baleen:to_binary(), <<"Hola">>)),
+     ?_assertEqual({error, <<"1234 is not a string nor a binary">>},
+		   baleen:validate(baleen:to_binary(), 1234)),
+     ?_assertEqual({error, <<"true is not a string nor a binary">>},
+		   baleen:validate(baleen:to_binary(), true))
+    ].
+
+to_string_test_() ->
+    [?_assertEqual({ok, "Hola"},
+		   baleen:validate(baleen:to_string(), "Hola")),
+     ?_assertEqual({ok, "Hola"},
+		   baleen:validate(baleen:to_string(), <<"Hola">>)),
+     ?_assertEqual({error, <<"1234 is not a string nor a binary">>},
+		   baleen:validate(baleen:to_string(), 1234)),
+     ?_assertEqual({error, <<"true is not a string nor a binary">>},
+		   baleen:validate(baleen:to_string(), true))
+    ].
+
 list_of_test_() ->
     Values = ["1", "43", "86", "95"],
     [?_assertEqual({ok, lists:map(fun(X) -> erlang:list_to_integer(X) end, Values)},
@@ -200,3 +222,55 @@ val_map_1_test_() ->
 		    missing => [],
 		    unexpected => []},
 		 baleen:val_map(Validator, Info)).
+
+between_test_() ->
+    [?_assertEqual({ok, 2},
+		   baleen:validate(baleen:between(1,4), 2)),
+     ?_assertEqual({error,<<"1 is not in range between (1, 4)">>},
+		   baleen:validate(baleen:between(1,4), 1)),
+     ?_assertEqual({error,<<"4 is not in range between (1, 4)">>},
+		   baleen:validate(baleen:between(1,4), 4)),
+     ?_assertEqual({error,<<"a is not an integer">>},
+		   baleen:validate(baleen:between(1,4), a))
+    ].
+
+between_open_start_test_() ->
+    [?_assertEqual({ok, 2},
+		   baleen:validate(baleen:between_open_start(1,4), 2)),
+     ?_assertEqual({ok, 1},
+		   baleen:validate(baleen:between_open_start(1,4), 1)),
+     ?_assertEqual({error,<<"4 is not in range between [1, 4)">>},
+		   baleen:validate(baleen:between_open_start(1,4), 4)),
+     ?_assertEqual({error,<<"0 is not in range between [1, 4)">>},
+		   baleen:validate(baleen:between_open_start(1,4), 0)),
+     ?_assertEqual({error,<<"a is not an integer">>},
+		   baleen:validate(baleen:between_open_start(1,4), a))
+    ].
+
+between_open_end_test_() ->
+    [?_assertEqual({ok, 2},
+		   baleen:validate(baleen:between_open_end(1,4), 2)),
+     ?_assertEqual({error,<<"1 is not in range between (1, 4]">>},
+		   baleen:validate(baleen:between_open_end(1,4), 1)),
+     ?_assertEqual({ok, 4},
+		   baleen:validate(baleen:between_open_end(1,4), 4)),
+     ?_assertEqual({error,<<"5 is not in range between (1, 4]">>},
+		   baleen:validate(baleen:between_open_end(1,4), 5)),
+     ?_assertEqual({error,<<"a is not an integer">>},
+		   baleen:validate(baleen:between_open_end(1,4), a))
+    ].
+
+between_open_test_() ->
+    [?_assertEqual({ok, 2},
+		   baleen:validate(baleen:between_open(1,4), 2)),
+     ?_assertEqual({ok, 1},
+		   baleen:validate(baleen:between_open(1,4), 1)),
+     ?_assertEqual({ok, 4},
+		   baleen:validate(baleen:between_open(1,4), 4)),
+     ?_assertEqual({error,<<"5 is not in range between [1, 4]">>},
+		   baleen:validate(baleen:between_open(1,4), 5)),
+     ?_assertEqual({error,<<"0 is not in range between [1, 4]">>},
+		   baleen:validate(baleen:between_open(1,4), 0)),
+     ?_assertEqual({error,<<"a is not an integer">>},
+		   baleen:validate(baleen:between_open(1,4), a))
+    ].

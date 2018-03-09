@@ -3,6 +3,14 @@
 
 ## Next release
 
+## v1.0.2
+
+### Added:
+```erlang
+-export([between/2, between_open_start/2, between_open_end/2, between_open/2]).
+-export([to_string/0, to_binary/0]).
+```
+
 ## v1.0.1
 
 ### Added:
