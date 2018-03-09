@@ -41,6 +41,11 @@
 -export([to_binary/0]).
 -export([to_string/0]).
 
+%% Compare validators
+-export([between/2]).
+-export([between_open_start/2]).
+-export([between_open_end/2]).
+-export([between_open/2]).
 
 %% Validator "lifters"
 -export([list_of/1]).
@@ -396,6 +401,58 @@ to_string() ->
 	  end
   end.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec between(integer(), integer()) -> validator(integer(), integer()).
+%% @doc Returns a validator that takes two `Value' and compare the
+%% number betwen the (Min,Max). If the cast success, `{ok, integer}' is returned,
+%% otherwise, `{error, <<"Value is not in range (Min,Max)">>}' is returned.
+between(Min, Max) ->
+    fun(T) when is_integer(T) ->
+	    if T > Min andalso T < Max -> {ok, T};
+	       true -> {error, format("~p is not in range between (~p, ~p)", [T, Min, Max])}
+	    end;
+       (T) -> {error, format("~p is not an integer", [T])}
+    end.
+	    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec between_open_start(integer(), integer()) -> validator(integer(), integer()).
+%% @doc Returns a validator that takes two `Value' and compare the
+%% number betwen the [Min,Max). If the cast success, `{ok, integer}' is returned,
+%% otherwise, `{error, <<"Value is not in range [Min,Max)">>}' is returned.
+between_open_start(Min, Max) ->
+    fun(T) when is_integer(T) ->
+	    if T >= Min andalso T < Max -> {ok, T};
+	       true -> {error, format("~p is not in range between [~p, ~p)", [T, Min, Max])}
+	    end;
+       (T) -> {error, format("~p is not an integer", [T])}
+    end.
+	    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec between_open_end(integer(), integer()) -> validator(integer(), integer()).
+%% @doc Returns a validator that takes two `Value' and compare the
+%% number betwen the (Min,Max]. If the cast success, `{ok, integer}' is returned,
+%% otherwise, `{error, <<"Value is not in range (Min,Max]">>}' is returned.
+between_open_end(Min, Max) ->
+    fun(T) when is_integer(T) ->
+	    if T > Min andalso T =< Max -> {ok, T};
+	       true -> {error, format("~p is not in range between (~p, ~p]", [T, Min, Max])}
+	    end;
+       (T) -> {error, format("~p is not an integer", [T])}
+    end.
+	    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec between_open(integer(), integer()) -> validator(integer(), integer()).
+%% @doc Returns a validator that takes two `Value' and compare the
+%% number betwen the [Min,Max]. If the cast success, `{ok, integer}' is returned,
+%% otherwise, `{error, <<"Value is not in range [Min,Max]">>}' is returned.
+between_open(Min, Max) ->
+    fun(T) when is_integer(T) ->
+	    if T >= Min andalso T =< Max -> {ok, T};
+	       true -> {error, format("~p is not in range between [~p, ~p]", [T, Min, Max])}
+	    end;
+       (T) -> {error, format("~p is not an integer", [T])}
+    end.
+	    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%====================================================================
 %% Internal functions

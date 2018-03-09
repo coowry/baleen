@@ -222,3 +222,55 @@ val_map_1_test_() ->
 		    missing => [],
 		    unexpected => []},
 		 baleen:val_map(Validator, Info)).
+
+between_test_() ->
+    [?_assertEqual({ok, 2},
+		   baleen:validate(baleen:between(1,4), 2)),
+     ?_assertEqual({error,<<"1 is not in range between (1, 4)">>},
+		   baleen:validate(baleen:between(1,4), 1)),
+     ?_assertEqual({error,<<"4 is not in range between (1, 4)">>},
+		   baleen:validate(baleen:between(1,4), 4)),
+     ?_assertEqual({error,<<"a is not an integer">>},
+		   baleen:validate(baleen:between(1,4), a))
+    ].
+
+between_open_start_test_() ->
+    [?_assertEqual({ok, 2},
+		   baleen:validate(baleen:between_open_start(1,4), 2)),
+     ?_assertEqual({ok, 1},
+		   baleen:validate(baleen:between_open_start(1,4), 1)),
+     ?_assertEqual({error,<<"4 is not in range between [1, 4)">>},
+		   baleen:validate(baleen:between_open_start(1,4), 4)),
+     ?_assertEqual({error,<<"0 is not in range between [1, 4)">>},
+		   baleen:validate(baleen:between_open_start(1,4), 0)),
+     ?_assertEqual({error,<<"a is not an integer">>},
+		   baleen:validate(baleen:between_open_start(1,4), a))
+    ].
+
+between_open_end_test_() ->
+    [?_assertEqual({ok, 2},
+		   baleen:validate(baleen:between_open_end(1,4), 2)),
+     ?_assertEqual({error,<<"1 is not in range between (1, 4]">>},
+		   baleen:validate(baleen:between_open_end(1,4), 1)),
+     ?_assertEqual({ok, 4},
+		   baleen:validate(baleen:between_open_end(1,4), 4)),
+     ?_assertEqual({error,<<"5 is not in range between (1, 4]">>},
+		   baleen:validate(baleen:between_open_end(1,4), 5)),
+     ?_assertEqual({error,<<"a is not an integer">>},
+		   baleen:validate(baleen:between_open_end(1,4), a))
+    ].
+
+between_open_test_() ->
+    [?_assertEqual({ok, 2},
+		   baleen:validate(baleen:between_open(1,4), 2)),
+     ?_assertEqual({ok, 1},
+		   baleen:validate(baleen:between_open(1,4), 1)),
+     ?_assertEqual({ok, 4},
+		   baleen:validate(baleen:between_open(1,4), 4)),
+     ?_assertEqual({error,<<"5 is not in range between [1, 4]">>},
+		   baleen:validate(baleen:between_open(1,4), 5)),
+     ?_assertEqual({error,<<"0 is not in range between [1, 4]">>},
+		   baleen:validate(baleen:between_open(1,4), 0)),
+     ?_assertEqual({error,<<"a is not an integer">>},
+		   baleen:validate(baleen:between_open(1,4), a))
+    ].
