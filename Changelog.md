@@ -2,7 +2,7 @@
 
 
 ## Next release
-git a
+
 ### Added:
 ```erlang
 -export([between/2, between_open_start/2, between_open_end/2, between_open/2]).
