@@ -1,6 +1,6 @@
 {application, baleen,
  [{description, "Data Validation in Erlang"},
-  {vsn, "1.0.2"},
+  {vsn, "1.0.3"},
   {registered, []},
   {applications,
    [kernel,
@@ -9,8 +9,6 @@
    ]},
   {env,[]},
   {modules, []},
-
-  {maintainers, []},
-  {licenses, []},
-  {links, []}
+  {licenses, ["BSD-4-Clause"]},
+  {links, [{"Github", "https://github.com/coowry/baleen"}]}
  ]}.
