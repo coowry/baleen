@@ -9,8 +9,6 @@
    ]},
   {env,[]},
   {modules, []},
-
-  {maintainers, []},
-  {licenses, []},
-  {links, []}
+  {licenses, ["BSD-4-Clause"]},
+  {links, [{"Github", "https://github.com/coowry/baleen"}]}
  ]}.
