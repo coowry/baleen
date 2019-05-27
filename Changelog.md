@@ -1,7 +1,22 @@
 # Changelog
 
+## Legend
+
+- `[+]` Added for new features.
+- `[-]` Removed for now removed features.
+- `[C]` Changed for changes in existing functionality.
+- `[F]` Fixed for any bug fixes.
+- `[O]` Obsolete for soon-to-be removed features.
+- `[S]` Security
+- `[T]` Technical change that doesn't affect the API (eg. refactoring)
 
 ## Next release
+
+## v1.0.3
+
+- [T] New convetion for this Changelog (see legend)
+- [T] rebar3 upgraded to 3.9.1
+- [T] .app.src updated: consistent with hex requirements.
 
 ## v1.0.2
 
